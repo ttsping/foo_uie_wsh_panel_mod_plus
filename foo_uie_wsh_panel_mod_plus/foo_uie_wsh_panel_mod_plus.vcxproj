@@ -53,7 +53,7 @@
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:\foo_uie_wsh_panel_mod\wtl;..\scintilla\include;$(IncludePath)</IncludePath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\scintilla\include;$(IncludePath)</IncludePath>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">foo_uie_wsh_panel_mod</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">foo_uie_wsh_panel_mod_plus</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">foo_uie_wsh_panel_mod_plus</TargetName>
     <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</IgnoreImportLibrary>
   </PropertyGroup>
@@ -88,7 +88,8 @@ copy "$(SolutionDir)extras\*.api" "C:\Program Files\Foobar2000\components"</Comm
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <PreBuildEvent>
-      <Command>"$(SolutionDir)common\preBuild.cmd" "$(ProjectDir)"</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
