@@ -1,0 +1,14 @@
+// vi:set ft=javascript ff=dos ts=4 sts=4 sw=4 et:
+
+// Demonstrate how to use import preprocessor directive
+// Copy scripts directory in this sample to the directory which contains foobar2000.exe
+
+// ==PREPROCESSOR==
+// @name "Preprocessor"
+// @author "T.P Wang"
+// import some craps here
+// @import "%fb2k_path%scripts\includeme.js"
+// ==/PREPROCESSOR==
+
+// Only print one message to the console
+print_to_console("Hello, world!");

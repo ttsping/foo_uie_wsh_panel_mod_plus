@@ -1,0 +1,50 @@
+// vi:set ft=javascript ff=dos ts=4 sts=4 sw=4 et:
+
+// ==PREPROCESSOR==
+// @name "Menu Sample (Base)"
+// @author "T.P Wang"
+// ==/PREPROCESSOR==
+
+var MF_SEPARATOR = 0x00000800;
+var MF_ENABLED = 0x00000000;
+var MF_GRAYED = 0x00000001;
+var MF_DISABLED = 0x00000002;
+var MF_UNCHECKED = 0x00000000;
+var MF_CHECKED = 0x00000008;
+var MF_STRING = 0x00000000;
+var MF_POPUP = 0x00000010;
+var MF_RIGHTJUSTIFY = 0x00004000;
+
+function on_mouse_lbtn_down(x, y) {
+    var _menu = window.CreatePopupMenu();
+    var i = 1,
+        j;
+    var ret;
+
+    _menu.AppendMenuItem(MF_STRING, i++, "Default");
+    _menu.AppendMenuItem(MF_STRING, i++, "Repeat (Playlist)");
+    _menu.AppendMenuItem(MF_STRING, i++, "Repeat (Track)");
+    _menu.AppendMenuItem(MF_STRING, i++, "Random");
+    _menu.AppendMenuItem(MF_STRING, i++, "Shuffle (tracks)");
+    _menu.AppendMenuItem(MF_STRING, i++, "Shuffle (albums)");
+    _menu.AppendMenuItem(MF_STRING, i, "Shuffle (folders)");
+    _menu.CheckMenuRadioItem(1, i, fb.PlayBackOrder + 1);
+
+    j = i + 1;
+
+    _menu.AppendMenuItem(MF_STRING, j++, "Default");
+    _menu.AppendMenuItem(MF_STRING, j++, "Repeat (Playlist)");
+    _menu.AppendMenuItem(MF_STRING, j++, "Repeat (Track)");
+    _menu.AppendMenuItem(MF_STRING, j++, "Random");
+    _menu.AppendMenuItem(MF_STRING, j++, "Shuffle (tracks)");
+    _menu.AppendMenuItem(MF_STRING, j++, "Shuffle (albums)");
+    _menu.AppendMenuItem(MF_STRING, i, "Shuffle (folders)");
+    _menu.CheckMenuRadioItem(j, i, fb.PlayBackOrder + j);
+
+    ret = _menu.TrackPopupMenu(x, y);
+    if (ret >= 1 && ret <= i) {
+        fb.PlayBackOrder = ret - 1;
+    }
+
+    _menu.Dispose();
+}

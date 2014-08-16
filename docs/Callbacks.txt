@@ -1,0 +1,265 @@
+// vi:set ft=javascript ff=dos ts=4 sts=4 sw=4 et:
+// Callback function prototypes
+
+// [1.0.4] Updated: mask, see Flags.txt for more details
+function on_mouse_lbtn_down(x, y, mask) {}
+
+// [1.0.4] Updated: mask, see Flags.txt for more details
+// [1.3.6] NOTE: This callback will be suppressed while both VK_LSHIFT and VK_LWIN are pressed.
+function on_mouse_lbtn_up(x, y, mask) {}
+
+// [1.1.8] Added: mask, see Flags.txt for more details
+function on_mouse_lbtn_dblclk(x, y, mask) {}
+
+// [1.0.4] New:
+// mask, see Flags.txt for more details
+function on_mouse_rbtn_down(x, y, mask) {}
+
+// [1.0.4] New:
+// mask, see Flags.txt for more details
+// HINT: return true if you want to supress the default context menu.
+// NOTE: {L-Win}+{L-Shift}+{Right Click} is reserved for poping up the default context menu.
+function on_mouse_rbtn_up(x, y, mask) {}
+
+// [1.1.8] New:
+// mask, see Flags.txt for more details
+function on_mouse_rbtn_dblclk(x, y, mask) {}
+
+// [1.1.8] New:
+// mask, see Flags.txt for more details
+function on_mouse_mbtn_down(x, y, mask) {}
+
+// [1.1.8] New:
+// mask, see Flags.txt for more details
+// Actions should be executed in this callback
+function on_mouse_mbtn_up(x, y, mask) {}
+
+// [1.1.8] New:
+// mask, see Flags.txt for more details
+function on_mouse_mbtn_dblclk(x, y, mask) {}
+
+// [1.4.1] Updated:
+function on_mouse_move(x, y, mask) {}
+
+// Called when mouse leaves WSH Panel Mod
+function on_mouse_leave() {}
+
+function on_mouse_wheel(step) {}
+
+/* 
+ * NOTE: All keyboard related callbacks require "Grab focus" enabled in panel Properties.
+ *       To capture arrow keys, set window.DlgCode
+ */
+
+// Keyboard key down
+// HINT: Return true to suppress processing keyboard shortcuts
+// vkey: Virtual Key Code, Refer to: http://msdn.microsoft.com/en-us/library/ms927178.aspx
+function on_key_down(vkey) {}
+
+// [1.3.2] New:
+// Keyboard key up
+// vkey: Virtual Key Code, Refer to: http://msdn.microsoft.com/en-us/library/ms927178.aspx
+function on_key_up(vkey) {}
+
+// [1.3.2] New:
+// code: UTF16 encoded char.
+// NOTE: in order to use this callback, set flag DLGC_WANTCHARS (#Flags.txt) to window.DlgCode.
+function on_char(code) {}
+
+// Get or lost focus
+function on_focus(is_focused) {}
+
+// After window is sized
+// NOTE: DO NOT Call window.Repaint() and such to repaint window in this function
+function on_size() {}
+
+// Called when window is ready to draw
+// gr - Refer to IGdiGraphics, note that gr will be invalid out of this callback scope.
+function on_paint(gr) {}
+
+// [1.1.1] New: Called when "stop after current" state is changed
+// state: boolean, reflect current "stop after current" value
+function on_playlist_stop_after_current_changed(state) {}
+
+// [1.1.1] New: Called when "cursor follow playback" state is changed
+// state: boolean, reflect current "cursor follow playback"  value
+function on_cursor_follow_playback_changed(state) {}
+
+// [1.1.1] New: Called when "playback follow cursor" state is changed
+// state: boolean, reflect current "playback follow cursor" value
+function on_playback_follow_cursor_changed(state) {}
+
+// [1.1.1] New: Called in other panels after window.NotifyOthers(name, info) is executed
+// name and info is the same as in NotifyOthers()
+// [1.3.0] Updated, see Interfaces.txt for more details.
+function on_notify_data(name, info) {}
+
+// [1.1.10] New:
+// [1.3.0] Updated:
+//   image_path will point to the image file (or music file itself, if image is an embedded image)
+// Get called while thread created by GetAlbumArtAsync() is done.
+function on_get_album_art_done(metadb, art_id, image, image_path) {}
+
+// [1.3.2] New:
+// Get called while thread created by gdi.LoadImageAsync() is done.
+function on_load_image_done(cookie, image) {}
+
+// [1.1.10] New: 
+// NOTE 1: Always call window.GetBackgroundImage() during this callback
+// NOTE 2: DO NOT call window.Repaint()
+function on_refresh_background_done() {}
+
+// [1.1.10] New: 
+// Called when at least 60s of the track has been played, or the track has reached its end after at least 1/3 
+//    of it has been played through.
+function on_item_played(metadb) {}
+
+// cmd: (integer, begin with 0): default, play, next, prev, settrack, rand, resume
+function on_playback_starting(cmd, is_paused) {}
+
+// [1.1.0] Updated: metadb - Refer to IFbMetadbHandle
+function on_playback_new_track(metadb) {}
+
+// reason: (integer, begin with 0): user, eof, starting_another
+function on_playback_stop(reason) {}
+
+// time - float value, in seconds.
+function on_playback_seek(time) {}
+
+// state = true when paused, false when resumed
+function on_playback_pause(state) {}
+
+// [1.4.3] Updated:
+// Called when currently played file gets edited
+function on_playback_edited(metadb) {}
+
+// Dynamic info (VBR bitrate etc) change
+function on_playback_dynamic_info() {}
+
+// Per-track dynamic info (stream track titles etc) change. Happens less often than on_playback_dynamic_info().
+function on_playback_dynamic_info_track() {}
+
+// Called every second, for time display
+// time - float value, in sec
+function on_playback_time(time) {}
+
+// val - volume level in dB; 0 for full volume.
+function on_volume_change(val) {}
+
+// NEW: Called when playback order is changed
+// new_order_index:
+//      0 - "Default"
+//      1 - "Repeat (Playlist)"
+//      2 - "Repeat (Track)"
+//      3 - "Random"
+//      4 - "Shuffle (tracks)"
+//      5 - "Shuffle (albums)"
+//      6 - "Shuffle (folders)"
+function on_playback_order_changed(new_order_index) {}
+
+function on_timer(timer_id) {}
+
+// [1.1.1] Updated: Called when playlist focus has been changed
+// For those who what to implement "follow cursor"
+// [1.5.0 Preview 6]: Changed: Add callback parameters "playlist", "from" and "to"
+function on_item_focus_change(playlist, from, to) {}
+
+// [1.1.3] New:
+// [1.4.0] Changed:
+// Called when metadb contents change. (Or, one of display hook component requests display update).
+// Cooperated with window.WatchMetadb() and window.UnWatchMetadb()
+// metadb_or_metadbs: 
+//          prior to "v1.4.0"   - The same metadb as in window.WatchMetadb(metadb)
+//          "v1.4.0"            - Metadb handles
+// fromhook: boolean, set to true when actual file contents haven't changed but one of metadb_display_field_provider 
+//   implementations requested an update so output of metadb_handle::format_title() etc has changed.
+// NOTE: See Preprocessors.txt if you are using @feature directive.
+// NOTE: metadb will be metadb handle list (already sorted) when preprocessor directive "feature":
+//   1. "v1.4" and later is set;
+//   2. "watch-metadb" is set.
+function on_metadb_changed(metadb_or_metadbs, fromhook) {}
+
+// [1.3.0] New:
+// DUI and CUI
+// On color setting changed
+// Retrieve colors using window.GetColorXXX() method.
+function on_colors_changed() {}
+
+// [1.3.0] New:
+// DUI and CUI
+// On font setting changed
+// Retrieve fonts using window.GetFontXXX() method.
+function on_font_changed() {}
+
+// [1.3.0] New:
+function on_playlist_switch() {}
+
+// [1.3.0] New:
+// Note: this callback is not guarantee to be called during unloading
+function on_script_unload() {}
+
+// [1.3.2] New:
+// Called when any playlist is removed/reordered/created/renamed.
+function on_playlists_changed() {}
+
+// [1.3.2] New:
+// [1.4.0 Beta 1] Changed:
+// This behavior will be changed when "Display->Selection viewers" of foobar2000 preferences is changed.
+// NOTE: metadb may be null.
+// NOTE: metadb will be not valid while preprocessor: "feature" is "v1.4" or newer. (See Preprocessors.txt)
+function on_selection_changed(metadb) {}
+
+// [1.5.0 Preview 7] New:
+function on_playlist_item_ensure_visible(playlist, item) {}
+
+// [1.4.1] Added:
+// playlist: index to indicate that which playlist has newly added items
+function on_playlist_items_added(playlist) {}
+
+// [1.5.0 Preview] Added:
+// Note this callback is different from on_playlists_changed(), which is applied to playlists, whenever
+//   this applied to playlist items instead.
+function on_playlist_items_reordered(playlist) {}
+
+// [1.4.1] Added:
+// playlist: index to indicate that which playlist has items removed
+// new_count: new items count of the playlist.
+function on_playlist_items_removed(playlist, new_count) {}
+
+// [1.5.0] Added:
+// origin:  0 - changed_user_added
+//          1 - changed_user_removed
+//          2 - changed_playback_advance
+function on_playback_queue_changed(origin) {}
+
+/* 
+ * Note:
+ * In order to get drag and drop callbacks work, you have to set feature="dragdrop" in the preprocessor.
+ * See Preprocessors.txt for more details.
+ *
+ * While dragging, you cannot receive callbacks like on_mouse_move().
+ */
+
+// [1.4.1] Added:
+// x, y and mask have the same meaning as in on_mouse_*() callbacks.
+// action: an object of IDropTargetAction interface.
+function on_drag_enter(action, x, y, mask) {}
+
+// [1.4.1] Added:
+// x, y and mask have the same meaning as in on_mouse_*() callbacks.
+// action: an object of IDropTargetAction interface.
+function on_drag_over(action, x, y, mask) {}
+
+// [1.4.1] Added:
+function on_drag_leave() {}
+
+// [1.4.1] Added:
+// x, y and mask have the same meaning as in on_mouse_*() callbacks.
+// action: an object of IDropTargetAction interface.
+function on_drag_drop(action, x, y, mask) {}
+
+
+// [1.5.0 Preview 8] New:
+// gr - Refer to IGdiGraphics, note that gr will be invalid out of this callback scope.
+// Please check your "tooltip" preprocessor directive before use.
+function on_tooltip_custom_paint(gr) {}

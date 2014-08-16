@@ -1,0 +1,151 @@
+// vi:set ft=javascript ff=dos ts=4 sts=4 sw=4 et:
+
+// ==PREPROCESSOR==
+// @name "Playback Order Button"
+// @author "tedGo and T.P Wang"
+// ==/PREPROCESSOR==
+
+// NOTE:
+// This sample is lack of button images, you can use your own instead.
+
+function RGB(r, g, b) {
+    return (0xff000000 | (r << 16) | (g << 8) | (b));
+}
+
+ButtonStates = {
+    normal: 0,
+    /* not used here
+	hover: 1,
+	down: 2, */
+    hide: 3
+}
+
+function SimpleButton(x, y, w, h, img, func_onClick, state) {
+    this.state = state ? state : ButtonStates.normal;
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+    this.img = img ? gdi.Image(img) : null;
+    this.func_onClick = func_onClick;
+
+    this.containXY = function(x, y) {
+        return (this.x <= x) && (x <= this.x + this.w) && (this.y <= y) && (y <= this.y + this.h);
+    }
+
+    this.draw = function(gr) {
+        if (this.state == ButtonStates.hide) return;
+
+        this.img && gr.DrawImage(this.img, this.x, this.y, this.w, this.h, 0, 0, this.w, this.h);
+    }
+
+    this.onClick = function() {
+        this.func_onClick && this.func_onClick();
+    }
+}
+
+function drawAllButtons(gr) {
+    for (var i in $buttons) {
+        $buttons[i].draw(gr);
+    }
+}
+
+function chooseButton(x, y) {
+    for (var i in $buttons) {
+        if ($buttons[i].containXY(x, y) && $buttons[i].state != ButtonStates.hide) return $buttons[i];
+    }
+
+    return null;
+}
+
+var PlaybackOrder = {
+    Default: 0,
+    RepeatPlaylist: 1,
+    RepeatTrack: 2,
+    Random: 3,
+    ShuffleTracks: 4,
+    ShuffleAlbums: 5,
+    ShuffleFolders: 6
+}
+
+/* Not used here
+var PlaybackOrderText = new Array(
+	"Default", // = 0
+	"Repeat (Playlist)",
+	"Repeat (Track)",
+	"Random",
+	"Shuffle (tracks)",
+	"Shuffle (albums)",
+	"Shuffle (folders)") */
+
+$buttons = {
+    PBDefault: new SimpleButton(5, 7, 18, 9, fb.foobarPath + "DarkOne/Buttons/PBDefault.png", function() {
+        fb.PlaybackOrder = PlaybackOrder.RepeatTrack;
+    }),
+
+    PBRepeat: new SimpleButton(5, 7, 18, 9, fb.FoobarPath + "DarkOne/Buttons/PBRepeat.png", function() {
+        fb.PlaybackOrder = PlaybackOrder.ShuffleTracks;
+    }),
+
+    PBShuffle: new SimpleButton(5, 7, 18, 9, fb.FoobarPath + "DarkOne/Buttons/PBShuffle.png", function() {
+        fb.PlaybackOrder = PlaybackOrder.ShuffleAlbums;
+    }),
+
+    PBRepeatPL: new SimpleButton(5, 7, 18, 9, fb.foobarPath + "DarkOne/Buttons/PBRepeatPL.png", function() {
+        fb.PlaybackOrder = PlaybackOrder.RepeatDefault;
+    }),
+
+    PBRandom: new SimpleButton(5, 7, 18, 9, fb.FoobarPath + "DarkOne/Buttons/PBRandom.png", function() {
+        fb.PlaybackOrder = PlaybackOrder.Default;
+    }),
+
+    PBShuffleF: new SimpleButton(5, 7, 18, 9, fb.FoobarPath + "DarkOne/Buttons/PBShuffleF.png", function() {
+        fb.PlaybackOrder = PlaybackOrder.Default;
+    }),
+
+    PBShuffleA: new SimpleButton(5, 7, 18, 9, fb.FoobarPath + "DarkOne/Buttons/PBShuffleA.png", function() {
+        fb.PlaybackOrder = PlaybackOrder.Default;
+    })
+}
+
+// Playback Order buttons are in this group, order is as PlaybackOrder, do not change
+var PBGroup = new Array(
+$buttons.PBDefault, $buttons.PBRepeatPL, $buttons.PBRepeat, $buttons.PBRandom, $buttons.PBShuffle, $buttons.PBShuffleA, $buttons.PBShuffleF);
+
+function on_init() {
+    on_playback_order_changed(fb.PlaybackOrder);
+};
+
+on_init();
+
+var cur_btn = null;
+var ww, hh;
+
+// --- APPLICATION START
+
+function on_paint(gr) {
+    gr.FillGradRect(0, -1, window.Width, window.Height + 1, 270, RGB(25, 40, 51), RGB(38, 60, 76));
+    drawAllButtons(gr);
+}
+
+function on_mouse_move(x, y) {
+    cur_btn = chooseButton(x, y);
+    window.Repaint();
+}
+
+function on_mouse_lbtn_up(x, y) {
+    if (cur_btn) {
+        cur_btn.onClick();
+    }
+    window.Repaint();
+}
+
+function on_playback_order_changed(new_order_index) {
+    for (var i in PBGroup) {
+        if (i == new_order_index) PBGroup[i].state = ButtonStates.normal;
+        else PBGroup[i].state = ButtonStates.hide;
+    }
+
+    window.Repaint();
+}
+// --- APPLICATION END

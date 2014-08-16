@@ -1,0 +1,63 @@
+// vi:set ft=javascript ff=dos ts=4 sts=4 sw=4 et:
+
+// ==PREPROCESSOR==
+// @name "Tooltip"
+// @author "T.P Wang"
+// ==/PREPROCESSOR==
+
+// ------------------------------
+// --- COMMON FUNCTIONS
+// ------------------------------
+function RGBA(r, g, b, a) {
+    return ((a << 24) | (r << 16) | (g << 8) | (b));
+}
+
+function RGB(r, g, b) {
+    return (0xff000000 | (r << 16) | (g << 8) | (b));
+}
+
+var DT_TOP = 0x00000000;
+var DT_CENTER = 0x00000001;
+var DT_VCENTER = 0x00000004;
+var DT_WORDBREAK = 0x00000010;
+var DT_CALCRECT = 0x00000400;
+var DT_NOPREFIX = 0x00000800;
+
+// Create a windows tooltip here
+// Please do not create more than one tooltip in one panel
+var g_tooltip = window.CreateTooltip();
+var g_font = gdi.Font("Tahoma", 14);
+var g_trackingMouse = false;
+var g_oldX, g_oldY;
+var ww, wh;
+
+
+function on_mouse_move(x, y) {
+    if (!g_trackingMouse) {
+        g_tooltip.Activate();
+        g_tooltip.TrackActivate = true;
+        g_trackingMouse = true;
+    }
+    
+    // Make sure the position is changed
+    if (g_oldX != x || g_oldY != y) {
+        g_tooltip.Text = "x:" + x + ", y:" + y;
+        g_tooltip.TrackPosition(x + 10, y + 20);
+        g_oldX = x;
+        g_oldY = y;
+    }
+}
+
+function on_mouse_leave() {
+    g_trackingMouse = false;
+    g_tooltip.TrackActivate = false;
+}
+
+function on_size() {
+    ww = window.Width;
+    wh = window.Height;
+}
+
+function on_paint(gr) {
+    gr.GdiDrawText("Move your mouse", g_font, RGB(0, 0, 0), 0, 0, ww, wh, DT_VCENTER | DT_CENTER | DT_WORDBREAK | DT_CALCRECT | DT_NOPREFIX);
+}

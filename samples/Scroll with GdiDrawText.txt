@@ -1,0 +1,101 @@
+// vi:set ft=javascript ff=dos ts=4 sts=4 sw=4 et:
+
+// ==PREPROCESSOR==
+// @name "Scroll with GdiDrawText"
+// @author "T.P Wang"
+// ==/PREPROCESSOR==
+
+var DT_TOP = 0x00000000;
+var DT_CENTER = 0x00000001;
+var DT_VCENTER = 0x00000004;
+var DT_WORDBREAK = 0x00000010;
+var DT_CALCRECT = 0x00000400;
+var DT_NOPREFIX = 0x00000800;
+
+String.prototype.repeat = function(num) {
+    return new Array(num + 1).join(this);
+}
+
+var g_font = gdi.Font("Tahoma", 12);
+var g_text = ("Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.\n" + "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.\n" + "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.\n" + "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n\n").repeat(5);
+
+var ww = 0,
+    wh = 0;
+var g_textcolor = 0xff000000;
+var g_backcolor = 0xffffffff;
+var g_need_calc = true;
+var g_textheight = 0;
+var g_offset = 0;
+var g_drag = false;
+var g_drag_y = 0;
+
+// START
+function on_size() {
+    ww = window.Width;
+    wh = window.Height;
+    reset();
+}
+
+function on_paint(gr) {
+    gr.FillSolidRect(0, 0, ww, wh, g_backcolor);
+
+    if (g_need_calc) {
+        calc();
+    } else {
+        gr.GdiDrawText(g_text, g_font, g_textcolor, 0, g_offset, ww, wh - g_offset, DT_CENTER | DT_WORDBREAK | DT_NOPREFIX);
+    }
+}
+
+function on_mouse_lbtn_down(x, y) {
+    g_drag = true;
+    g_drag_y = y;
+}
+
+function on_mouse_lbtn_up(x, y) {
+    g_drag = false;
+}
+
+function on_mouse_move(x, y) {
+    if (g_drag) {
+        applyDelta(y - g_drag_y);
+        g_drag_y = y;
+    }
+}
+
+function on_mouse_wheel(step) {
+    applyDelta(step * 20);
+}
+
+function calc() {
+    // Using a temp IGdiGraphics interface
+    var temp_bmp = gdi.CreateImage(1, 1);
+    // Don't forget to call temp_bmp.ReleaseGraphics(temp_gr)!
+    var temp_gr = temp_bmp.GetGraphics();
+
+    // Calculate
+    arr = temp_gr.GdiDrawText(g_text, g_font, g_textcolor, 0, 0, ww, wh, DT_VCENTER | DT_CENTER | DT_WORDBREAK | DT_CALCRECT | DT_NOPREFIX).toArray();
+    g_textheight = arr[3] - arr[1];
+    g_offset = wh / 2;
+    g_need_calc = false;
+
+    // Free the resources
+    temp_bmp.ReleaseGraphics(temp_gr);
+    temp_bmp.Dispose();
+    temp_gr = null;
+    temp_bmp = null;
+    window.Repaint();
+}
+
+function applyDelta(delta) {
+    var temp = g_offset + delta;
+
+    if ((temp <= wh / 2) && (temp >= wh / 2 - g_textheight)) {
+        g_offset = temp;
+        window.Repaint();
+    }
+}
+
+function reset() {
+    g_need_calc = true;
+    g_offset = 0;
+}
