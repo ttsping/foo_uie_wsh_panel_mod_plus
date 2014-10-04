@@ -104,6 +104,11 @@ fb.IsAutoPlaylist(idx)
 fb.CreateAutoPlaylist(idx, name, query[, sort, flags])
 fb.ShowAutoPlaylistUI(idx)
 fb.PlaylistItemCount(idx)
+fb.IsMediaLibraryEnabled();
+fb.GetAllItemsInMediaLibrary();
+fb.QueryMulti(handles,query_string);
+fb.GetMainMenuCommandStatus(command);
+
 
 utils.CheckComponent(name[, is_dll])
 utils.CheckFont(name)

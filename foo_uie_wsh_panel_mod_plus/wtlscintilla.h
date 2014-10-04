@@ -500,6 +500,12 @@ public:
 		::SendMessage(m_hWnd,SCI_SETANCHOR,nAnchor,0L);
 	}
 
+	bool GetSelectionEmpty()
+	{
+		ATLASSERT(::IsWindow(m_hWnd));
+		return ::SendMessage(m_hWnd,SCI_GETSELECTIONEMPTY,0,0L)!=0;
+	}
+
 	void SetSelectionStart(unsigned int nPosition)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -1855,6 +1861,12 @@ public:
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		::SendMessage(m_hWnd,SCI_ENSUREVISIBLEENFORCEPOLICY,nLine,0L);
+	}
+
+	void FoldAll(int action)
+	{
+		ATLASSERT(::IsWindow(m_hWnd));
+		::SendMessage(m_hWnd,SCI_FOLDALL,action,0L);
 	}
 
 	//@}

@@ -35,6 +35,9 @@ struct t_style_to_key_table
 
 class CScriptEditorCtrl : public CScintillaCtrl
 {
+
+	enum { MARGIN_LINE_NUMBER = 0 , MARGIN_FOLD };
+
 public:
 	CScriptEditorCtrl()
 	{
@@ -59,7 +62,8 @@ public:
 	void RestoreDefaultStyle();
 	void SetLanguage(const char * lang);
 	void SetJScript();
-	void SetVBScript();	
+	void SetVBScript();
+	void SetFold();
 	void TrackWidth();
 	void SetAllStylesFromTable(const t_style_to_key_table table[]);
 	void AutoMarginWidth();

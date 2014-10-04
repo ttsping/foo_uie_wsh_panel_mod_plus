@@ -4,11 +4,14 @@
  *
  * Created by Mike Lischke.
  *
- * Copyright 2009 Sun Microsystems, Inc. All rights reserved.
+ * Copyright 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2009, 2011 Sun Microsystems, Inc. All rights reserved.
  * This file is dual licensed under LGPL v2.1 and the Scintilla license (http://www.scintilla.org/License.txt).
  */
 
+#import "Platform.h"
 #import "ScintillaView.h"
+#import "ScintillaCocoa.h"
 
 using namespace Scintilla;
 
@@ -19,48 +22,187 @@ static NSCursor* waitCursor;
 // The scintilla indicator used for keyboard input.
 #define INPUT_INDICATOR INDIC_MAX - 1
 
-NSString *SCIUpdateUINotification = @"SCIUpdateUI";
+NSString *const SCIUpdateUINotification = @"SCIUpdateUI";
 
-@implementation InnerView
+/**
+ * Provide an NSCursor object that matches the Window::Cursor enumeration.
+ */
+static NSCursor *cursorFromEnum(Window::Cursor cursor)
+{
+  switch (cursor)
+  {
+    case Window::cursorText:
+      return [NSCursor IBeamCursor];
+    case Window::cursorArrow:
+      return [NSCursor arrowCursor];
+    case Window::cursorWait:
+      return waitCursor;
+    case Window::cursorHoriz:
+      return [NSCursor resizeLeftRightCursor];
+    case Window::cursorVert:
+      return [NSCursor resizeUpDownCursor];
+    case Window::cursorReverseArrow:
+      return reverseArrowCursor;
+    case Window::cursorUp:
+    default:
+      return [NSCursor arrowCursor];
+  }
+}
+
+
+@implementation SCIMarginView
+
+@synthesize marginWidth, owner;
+
+- (id)initWithScrollView:(NSScrollView *)aScrollView
+{
+  self = [super initWithScrollView:aScrollView orientation:NSVerticalRuler];
+  if (self != nil)
+  {
+    owner = nil;
+    marginWidth = 20;
+    currentCursors = [[NSMutableArray arrayWithCapacity:0] retain];
+    for (size_t i=0; i<5; i++)
+    {
+      [currentCursors addObject: [reverseArrowCursor retain]];
+    }
+    [self setClientView:[aScrollView documentView]];
+  }
+  return self;
+}
+
+- (void) dealloc
+{
+  [currentCursors release];
+  [super dealloc];
+}
+
+- (void) setFrame: (NSRect) frame
+{
+  [super setFrame: frame];
+
+  [[self window] invalidateCursorRectsForView: self];
+}
+
+- (CGFloat)requiredThickness
+{
+  return marginWidth;
+}
+
+- (void)drawHashMarksAndLabelsInRect:(NSRect)aRect
+{
+  if (owner) {
+    NSRect contentRect = [[[self scrollView] contentView] bounds];
+    NSRect marginRect = [self bounds];
+    // Ensure paint to bottom of view to avoid glitches
+    if (marginRect.size.height > contentRect.size.height) {
+      // Legacy scroll bar mode leaves a poorly painted corner
+      aRect = marginRect;
+    }
+    owner.backend->PaintMargin(aRect);
+  }
+}
+
+- (void) mouseDown: (NSEvent *) theEvent
+{
+  NSClipView *textView = [[self scrollView] contentView];
+  [[textView window] makeFirstResponder:textView];
+  owner.backend->MouseDown(theEvent);
+}
+
+- (void) mouseDragged: (NSEvent *) theEvent
+{
+  owner.backend->MouseMove(theEvent);
+}
+
+- (void) mouseMoved: (NSEvent *) theEvent
+{
+  owner.backend->MouseMove(theEvent);
+}
+
+- (void) mouseUp: (NSEvent *) theEvent
+{
+  owner.backend->MouseUp(theEvent);
+}
+
+/**
+ * This method is called to give us the opportunity to define our mouse sensitive rectangle.
+ */
+- (void) resetCursorRects
+{
+  [super resetCursorRects];
+
+  int x = 0;
+  NSRect marginRect = [self bounds];
+  size_t co = [currentCursors count];
+  for (size_t i=0; i<co; i++)
+  {
+    int cursType = owner.backend->WndProc(SCI_GETMARGINCURSORN, i, 0);
+    int width =owner.backend->WndProc(SCI_GETMARGINWIDTHN, i, 0);
+    NSCursor *cc = cursorFromEnum(static_cast<Window::Cursor>(cursType));
+    [currentCursors replaceObjectAtIndex:i withObject: cc];
+    marginRect.origin.x = x;
+    marginRect.size.width = width;
+    [self addCursorRect: marginRect cursor: cc];
+    [cc setOnMouseEntered: YES];
+    x += width;
+  }
+}
+
+@end
+
+@implementation SCIContentView
 
 @synthesize owner = mOwner;
 
 //--------------------------------------------------------------------------------------------------
 
-- (NSView*) initWithFrame: (NSRect) frame 
+- (NSView*) initWithFrame: (NSRect) frame
 {
   self = [super initWithFrame: frame];
-  
+
   if (self != nil)
   {
     // Some initialization for our view.
     mCurrentCursor = [[NSCursor arrowCursor] retain];
-    mCurrentTrackingRect = 0;
+    trackingArea = nil;
     mMarkedTextRange = NSMakeRange(NSNotFound, 0);
-    
+
     [self registerForDraggedTypes: [NSArray arrayWithObjects:
                                    NSStringPboardType, ScintillaRecPboardType, NSFilenamesPboardType, nil]];
   }
-  
+
   return self;
 }
 
 //--------------------------------------------------------------------------------------------------
 
 /**
- * When the view is resized we need to update our tracking rectangle and let the backend know.
+ * When the view is resized or scrolled we need to update our tracking area.
+ */
+- (void) updateTrackingAreas
+{
+  if (trackingArea)
+    [self removeTrackingArea:trackingArea];
+  
+  int opts = (NSTrackingActiveAlways | NSTrackingInVisibleRect | NSTrackingMouseEnteredAndExited | NSTrackingMouseMoved);
+  trackingArea = [[NSTrackingArea alloc] initWithRect:[self bounds]
+                                              options:opts
+                                                owner:self
+                                             userInfo:nil];
+  [self addTrackingArea: trackingArea];
+  [super updateTrackingAreas];
+}
+
+//--------------------------------------------------------------------------------------------------
+
+/**
+ * When the view is resized we need to let the backend know.
  */
 - (void) setFrame: (NSRect) frame
 {
   [super setFrame: frame];
-
-  // Make the content also a tracking rectangle for mouse events.
-  if (mCurrentTrackingRect != 0)
-    [self removeTrackingRect: mCurrentTrackingRect];
-	mCurrentTrackingRect = [self addTrackingRect: [self bounds]
-                                         owner: self
-                                      userData: nil
-                                  assumeInside: YES];
+	
   mOwner.backend->Resize();
 }
 
@@ -69,39 +211,16 @@ NSString *SCIUpdateUINotification = @"SCIUpdateUI";
 /**
  * Called by the backend if a new cursor must be set for the view.
  */
-- (void) setCursor: (Window::Cursor) cursor
+- (void) setCursor: (int) cursor
 {
+  Window::Cursor eCursor = (Window::Cursor)cursor;
   [mCurrentCursor autorelease];
-  switch (cursor)
-  {
-    case Window::cursorText:
-      mCurrentCursor = [NSCursor IBeamCursor];
-      break;
-    case Window::cursorArrow:
-      mCurrentCursor = [NSCursor arrowCursor];
-      break;
-    case Window::cursorWait:
-      mCurrentCursor = waitCursor;
-      break;
-    case Window::cursorHoriz:
-      mCurrentCursor = [NSCursor resizeLeftRightCursor];
-      break;
-    case Window::cursorVert:
-      mCurrentCursor = [NSCursor resizeUpDownCursor];
-      break;
-    case Window::cursorReverseArrow:
-      mCurrentCursor = reverseArrowCursor;
-      break;
-    case Window::cursorUp:
-    default:
-      mCurrentCursor = [NSCursor arrowCursor];
-      break;
-  }
-  
+  mCurrentCursor = cursorFromEnum(eCursor);
   [mCurrentCursor retain];
-  
+
   // Trigger recreation of the cursor rectangle(s).
   [[self window] invalidateCursorRectsForView: self];
+  [mOwner updateMarginCursors];
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -112,10 +231,43 @@ NSString *SCIUpdateUINotification = @"SCIUpdateUI";
 - (void) resetCursorRects
 {
   [super resetCursorRects];
-  
+
   // We only have one cursor rect: our bounds.
   [self addCursorRect: [self bounds] cursor: mCurrentCursor];
   [mCurrentCursor setOnMouseEntered: YES];
+}
+
+//--------------------------------------------------------------------------------------------------
+
+/**
+ * Called before repainting.
+ */
+- (void) viewWillDraw
+{
+  const NSRect *rects;
+  NSInteger nRects = 0;
+  [self getRectsBeingDrawn:&rects count:&nRects];
+  if (nRects > 0) {
+    NSRect rectUnion = rects[0];
+    for (int i=0;i<nRects;i++) {
+      rectUnion = NSUnionRect(rectUnion, rects[i]);
+    }
+    mOwner.backend->WillDraw(rectUnion);
+  }
+  [super viewWillDraw];
+}
+
+//--------------------------------------------------------------------------------------------------
+
+/**
+ * Called before responsive scrolling overdraw.
+ */
+- (void) prepareContentInRect: (NSRect) rect
+{
+  mOwner.backend->WillDraw(rect);
+#if MAC_OS_X_VERSION_MAX_ALLOWED > 1080
+  [super prepareContentInRect: rect];
+#endif
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -126,9 +278,11 @@ NSString *SCIUpdateUINotification = @"SCIUpdateUI";
 - (void) drawRect: (NSRect) rect
 {
   CGContextRef context = (CGContextRef) [[NSGraphicsContext currentContext] graphicsPort];
-  
+
   if (!mOwner.backend->Draw(rect, context)) {
-    [self display];
+    dispatch_async(dispatch_get_main_queue(), ^{
+      [self setNeedsDisplay:YES];
+    });
   }
 }
 
@@ -136,7 +290,7 @@ NSString *SCIUpdateUINotification = @"SCIUpdateUI";
 
 /**
  * Windows uses a client coordinate system where the upper left corner is the origin in a window
- * (and so does Scintilla). We have to adjust for that. However by returning YES here, we are 
+ * (and so does Scintilla). We have to adjust for that. However by returning YES here, we are
  * already done with that.
  * Note that because of returning YES here most coordinates we use now (e.g. for painting,
  * invalidating rectangles etc.) are given with +Y pointing down!
@@ -189,9 +343,9 @@ NSString *SCIUpdateUINotification = @"SCIUpdateUI";
 
 //--------------------------------------------------------------------------------------------------
 
-// Adoption of NSTextInput protocol.
+// Adoption of NSTextInputClient protocol.
 
-- (NSAttributedString*) attributedSubstringFromRange: (NSRange) range
+- (NSAttributedString *)attributedSubstringForProposedRange:(NSRange)aRange actualRange:(NSRangePointer)actualRange
 {
   return nil;
 }
@@ -205,14 +359,6 @@ NSString *SCIUpdateUINotification = @"SCIUpdateUI";
 
 //--------------------------------------------------------------------------------------------------
 
-- (NSInteger) conversationIdentifier
-{
-  return (NSInteger) self;
-
-}
-
-//--------------------------------------------------------------------------------------------------
-
 - (void) doCommandBySelector: (SEL) selector
 {
   if ([self respondsToSelector: @selector(selector)])
@@ -221,9 +367,41 @@ NSString *SCIUpdateUINotification = @"SCIUpdateUI";
 
 //--------------------------------------------------------------------------------------------------
 
-- (NSRect) firstRectForCharacterRange: (NSRange) range
+- (NSRect) firstRectForCharacterRange: (NSRange) aRange actualRange: (NSRangePointer) actualRange
 {
-  return NSZeroRect;
+  NSRect rect;
+  rect.origin.x = [ScintillaView directCall: mOwner
+				    message: SCI_POINTXFROMPOSITION
+				     wParam: 0
+				     lParam: aRange.location];
+  rect.origin.y = [ScintillaView directCall: mOwner
+				    message: SCI_POINTYFROMPOSITION
+				     wParam: 0
+				     lParam: aRange.location];
+  int rangeEnd = aRange.location + aRange.length;
+  rect.size.width = [ScintillaView directCall: mOwner
+				      message: SCI_POINTXFROMPOSITION
+				       wParam: 0
+				       lParam: rangeEnd] - rect.origin.x;
+  rect.size.height = [ScintillaView directCall: mOwner
+				       message: SCI_POINTYFROMPOSITION
+					wParam: 0
+					lParam: rangeEnd] - rect.origin.y;
+  rect.size.height += [ScintillaView directCall: mOwner
+					message: SCI_TEXTHEIGHT
+					 wParam: 0
+					 lParam: 0];
+  rect = [[[self superview] superview] convertRect:rect toView:nil];
+#if MAC_OS_X_VERSION_MAX_ALLOWED > MAC_OS_X_VERSION_10_6
+  if ([self.window respondsToSelector:@selector(convertRectToScreen:)])
+      rect = [self.window convertRectToScreen:rect];
+  else // convertRectToScreen not available on 10.6
+      rect.origin = [self.window convertBaseToScreen:rect.origin];
+#else
+  rect.origin = [self.window convertBaseToScreen:rect.origin];
+#endif
+
+  return rect;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -238,17 +416,26 @@ NSString *SCIUpdateUINotification = @"SCIUpdateUI";
 /**
  * General text input. Used to insert new text at the current input position, replacing the current
  * selection if there is any.
+ * First removes the replacementRange.
  */
-- (void) insertText: (id) aString
+- (void) insertText: (id) aString replacementRange: (NSRange) replacementRange
 {
 	// Remove any previously marked text first.
 	[self removeMarkedText];
+
+	if (replacementRange.location == (NSNotFound-1))
+		// This occurs when the accent popup is visible and menu selected.
+		// Its replacing a non-existent position so do nothing.
+		return;
+
+	[mOwner deleteRange: replacementRange];
+
 	NSString* newText = @"";
 	if ([aString isKindOfClass:[NSString class]])
 		newText = (NSString*) aString;
 	else if ([aString isKindOfClass:[NSAttributedString class]])
 		newText = (NSString*) [aString string];
-	
+
 	mOwner.backend->InsertText(newText);
 }
 
@@ -277,29 +464,41 @@ NSString *SCIUpdateUINotification = @"SCIUpdateUI";
  * @param aString The text to insert, either what has been marked already or what is selected already
  *                or simply added at the current insertion point. Depending on what is available.
  * @param range The range of the new text to select (given relative to the insertion point of the new text).
+ * @param replacementRange The range to remove before insertion.
  */
-- (void) setMarkedText: (id) aString selectedRange: (NSRange) range
+- (void) setMarkedText: (id) aString selectedRange: (NSRange)range replacementRange: (NSRange)replacementRange
 {
-  // Since we did not return any valid attribute for marked text (see validAttributesForMarkedText)
-  // we can safely assume the passed in text is an NSString instance.
-	NSString* newText = @"";
-	if ([aString isKindOfClass:[NSString class]])
-		newText = (NSString*) aString;
-	else if ([aString isKindOfClass:[NSAttributedString class]])
-		newText = (NSString*) [aString string];
+  NSString* newText = @"";
+  if ([aString isKindOfClass:[NSString class]])
+    newText = (NSString*) aString;
+  else
+    if ([aString isKindOfClass:[NSAttributedString class]])
+      newText = (NSString*) [aString string];
 
   long currentPosition = [mOwner getGeneralProperty: SCI_GETCURRENTPOS parameter: 0];
 
   // Replace marked text if there is one.
   if (mMarkedTextRange.length > 0)
   {
-    // We have already marked text. Replace that.
     [mOwner setGeneralProperty: SCI_SETSELECTIONSTART
                          value: mMarkedTextRange.location];
-    [mOwner setGeneralProperty: SCI_SETSELECTIONEND 
+    [mOwner setGeneralProperty: SCI_SETSELECTIONEND
                          value: mMarkedTextRange.location + mMarkedTextRange.length];
     currentPosition = mMarkedTextRange.location;
   }
+  else
+  {
+    // Switching into composition so remember if collecting undo.
+    undoCollectionWasActive = [mOwner getGeneralProperty: SCI_GETUNDOCOLLECTION] != 0;
+
+    // Keep Scintilla from collecting undo actions for the composition task.
+    [mOwner setGeneralProperty: SCI_SETUNDOCOLLECTION value: 0];
+
+    // Ensure only a single selection
+    mOwner.backend->SelectOnlyMainSelection();
+  }
+
+  [mOwner deleteRange: replacementRange];
 
   // Note: Scintilla internally works almost always with bytes instead chars, so we need to take
   //       this into account when determining selection ranges and such.
@@ -308,20 +507,33 @@ NSString *SCIUpdateUINotification = @"SCIUpdateUI";
 
   mMarkedTextRange.location = currentPosition;
   mMarkedTextRange.length = lengthInserted;
-    
-  // Mark the just inserted text. Keep the marked range for later reset.
-  [mOwner setGeneralProperty: SCI_SETINDICATORCURRENT value: INPUT_INDICATOR];
-  [mOwner setGeneralProperty: SCI_INDICATORFILLRANGE
-                   parameter: mMarkedTextRange.location
-                       value: mMarkedTextRange.length];
-  
+
+  if (lengthInserted > 0)
+  {
+    // Mark the just inserted text. Keep the marked range for later reset.
+    [mOwner setGeneralProperty: SCI_SETINDICATORCURRENT value: INPUT_INDICATOR];
+    [mOwner setGeneralProperty: SCI_INDICATORFILLRANGE
+                     parameter: mMarkedTextRange.location
+                         value: mMarkedTextRange.length];
+  }
+  else
+  {
+    // Re-enable undo action collection if composition ended (indicated by an empty mark string).
+    if (undoCollectionWasActive)
+      [mOwner setGeneralProperty: SCI_SETUNDOCOLLECTION value: range.length == 0];
+  }
+
   // Select the part which is indicated in the given range. It does not scroll the caret into view.
   if (range.length > 0)
   {
-    [mOwner setGeneralProperty: SCI_SETSELECTIONSTART
-                     value: currentPosition + range.location];
-    [mOwner setGeneralProperty: SCI_SETSELECTIONEND 
-                     value: currentPosition + range.location + range.length];
+    // range is in characters so convert to bytes for selection.
+    int rangeStart = currentPosition;
+    for (size_t characterInComposition=0; characterInComposition<range.location; characterInComposition++)
+      rangeStart = [mOwner getGeneralProperty: SCI_POSITIONAFTER parameter: rangeStart];
+    int rangeEnd = rangeStart;
+    for (size_t characterInRange=0; characterInRange<range.length; characterInRange++)
+      rangeEnd = [mOwner getGeneralProperty: SCI_POSITIONAFTER parameter: rangeEnd];
+    [mOwner setGeneralProperty: SCI_SETSELECTION parameter: rangeEnd value: rangeStart];
   }
 }
 
@@ -336,6 +548,10 @@ NSString *SCIUpdateUINotification = @"SCIUpdateUI";
                      parameter: mMarkedTextRange.location
                          value: mMarkedTextRange.length];
     mMarkedTextRange = NSMakeRange(NSNotFound, 0);
+
+    // Reenable undo action collection, after we are done with text composition.
+    if (undoCollectionWasActive)
+      [mOwner setGeneralProperty: SCI_SETUNDOCOLLECTION value: 1];
   }
 }
 
@@ -349,12 +565,13 @@ NSString *SCIUpdateUINotification = @"SCIUpdateUI";
   if (mMarkedTextRange.length > 0)
   {
     // We have already marked text. Replace that.
-    [mOwner setGeneralProperty: SCI_SETSELECTIONSTART
-                     value: mMarkedTextRange.location];
-    [mOwner setGeneralProperty: SCI_SETSELECTIONEND 
-                     value: mMarkedTextRange.location + mMarkedTextRange.length];
-    mOwner.backend->InsertText(@"");
+    [mOwner deleteRange: mMarkedTextRange];
+
     mMarkedTextRange = NSMakeRange(NSNotFound, 0);
+
+    // Reenable undo action collection, after we are done with text composition.
+    if (undoCollectionWasActive)
+      [mOwner setGeneralProperty: SCI_SETUNDOCOLLECTION value: 1];
   }
 }
 
@@ -365,14 +582,14 @@ NSString *SCIUpdateUINotification = @"SCIUpdateUI";
   return nil;
 }
 
-// End of the NSTextInput protocol adoption.
+// End of the NSTextInputClient protocol adoption.
 
 //--------------------------------------------------------------------------------------------------
 
 /**
  * Generic input method. It is used to pass on keyboard input to Scintilla. The control itself only
  * handles shortcuts. The input is then forwarded to the Cocoa text input system, which in turn does
- * its own input handling (character composition via NSTextInput protocol):
+ * its own input handling (character composition via NSTextInputClient protocol):
  */
 - (void) keyDown: (NSEvent *) theEvent
 {
@@ -384,7 +601,7 @@ NSString *SCIUpdateUINotification = @"SCIUpdateUI";
 
 //--------------------------------------------------------------------------------------------------
 
-- (void) mouseDown: (NSEvent *) theEvent  
+- (void) mouseDown: (NSEvent *) theEvent
 {
   mOwner.backend->MouseDown(theEvent);
 }
@@ -426,9 +643,40 @@ NSString *SCIUpdateUINotification = @"SCIUpdateUI";
 
 //--------------------------------------------------------------------------------------------------
 
+/**
+ * Mouse wheel with command key magnifies text.
+ * Enabling this code causes visual garbage to appear when scrolling
+ * horizontally on OS X 10.9 with a retina display.
+ * Pinch gestures and key commands can be used for magnification.
+ */
+#ifdef SCROLL_WHEEL_MAGNIFICATION
 - (void) scrollWheel: (NSEvent *) theEvent
 {
-  mOwner.backend->MouseWheel(theEvent);
+  if (([theEvent modifierFlags] & NSCommandKeyMask) != 0) {
+    mOwner.backend->MouseWheel(theEvent);
+  } else {
+    [super scrollWheel:theEvent];
+  }
+}
+#endif
+
+//--------------------------------------------------------------------------------------------------
+
+/**
+ * Ensure scrolling is aligned to whole lines instead of starting part-way through a line
+ */
+- (NSRect)adjustScroll:(NSRect)proposedVisibleRect
+{
+  NSRect rc = proposedVisibleRect;
+  // Snap to lines
+  NSRect contentRect = [self bounds];
+  if ((rc.origin.y > 0) && (NSMaxY(rc) < contentRect.size.height)) {
+    // Only snap for positions inside the document - allow outside
+    // for overshoot.
+    int lineHeight = mOwner.backend->WndProc(SCI_TEXTHEIGHT, 0, 0);
+    rc.origin.y = roundf(rc.origin.y / lineHeight) * lineHeight;
+  }
+  return rc;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -456,7 +704,7 @@ NSString *SCIUpdateUINotification = @"SCIUpdateUI";
 //--------------------------------------------------------------------------------------------------
 
 /**
- * Called when an external drag operation enters the view. 
+ * Called when an external drag operation enters the view.
  */
 - (NSDragOperation) draggingEntered: (id <NSDraggingInfo>) sender
 {
@@ -495,7 +743,7 @@ NSString *SCIUpdateUINotification = @"SCIUpdateUI";
 
 - (BOOL) performDragOperation: (id <NSDraggingInfo>) sender
 {
-  return mOwner.backend->PerformDragOperation(sender);  
+  return mOwner.backend->PerformDragOperation(sender);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -587,6 +835,28 @@ NSString *SCIUpdateUINotification = @"SCIUpdateUI";
   return mOwner.backend->CanRedo();
 }
 
+- (BOOL) validateUserInterfaceItem: (id <NSValidatedUserInterfaceItem>) anItem
+{
+  SEL action = [anItem action];
+  if (action==@selector(undo:)) {
+    return [self canUndo];
+  }
+  else if (action==@selector(redo:)) {
+    return [self canRedo];
+  }
+  else if (action==@selector(cut:) || action==@selector(copy:) || action==@selector(clear:)) {
+    return mOwner.backend->HasSelection();
+  }
+  else if (action==@selector(paste:)) {
+    return mOwner.backend->CanPaste();
+  }
+  return YES;
+}
+
+- (void) clear: (id) sender
+{
+  [self deleteBackward:sender];
+}
 
 - (BOOL) isEditable
 {
@@ -608,10 +878,11 @@ NSString *SCIUpdateUINotification = @"SCIUpdateUI";
 @implementation ScintillaView
 
 @synthesize backend = mBackend;
-@synthesize owner   = mOwner;
+@synthesize delegate = mDelegate;
+@synthesize scrollView;
 
 /**
- * ScintiallView is a composite control made from an NSView and an embedded NSView that is
+ * ScintillaView is a composite control made from an NSView and an embedded NSView that is
  * used as canvas for the output (by the backend, using its CGContext), plus other elements
  * (scrollers, info bar).
  */
@@ -626,15 +897,26 @@ NSString *SCIUpdateUINotification = @"SCIUpdateUI";
   if (self == [ScintillaView class])
   {
     NSBundle* bundle = [NSBundle bundleForClass: [ScintillaView class]];
-    
-    NSString* path = [bundle pathForResource: @"mac_cursor_busy" ofType: @"png" inDirectory: nil];
+
+    NSString* path = [bundle pathForResource: @"mac_cursor_busy" ofType: @"tiff" inDirectory: nil];
     NSImage* image = [[[NSImage alloc] initWithContentsOfFile: path] autorelease];
     waitCursor = [[NSCursor alloc] initWithImage: image hotSpot: NSMakePoint(2, 2)];
-    
-    path = [bundle pathForResource: @"mac_cursor_flipped" ofType: @"png" inDirectory: nil];
+
+    path = [bundle pathForResource: @"mac_cursor_flipped" ofType: @"tiff" inDirectory: nil];
     image = [[[NSImage alloc] initWithContentsOfFile: path] autorelease];
     reverseArrowCursor = [[NSCursor alloc] initWithImage: image hotSpot: NSMakePoint(12, 2)];
   }
+}
+
+//--------------------------------------------------------------------------------------------------
+
+/**
+ * Specify the SCIContentView class. Can be overridden in a subclass to provide an SCIContentView subclass.
+ */
+
++ (Class) contentViewClass
+{
+  return [SCIContentView class];
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -651,7 +933,7 @@ NSString *SCIUpdateUINotification = @"SCIUpdateUI";
     long zoomFactor = [self getGeneralProperty: SCI_GETZOOM] + zoomDelta;
     [self setGeneralProperty: SCI_SETZOOM parameter: zoomFactor value:0];
     zoomDelta = 0.0;
-  }     
+  }
 #endif
 }
 
@@ -723,80 +1005,70 @@ NSString *SCIUpdateUINotification = @"SCIUpdateUI";
 //--------------------------------------------------------------------------------------------------
 
 /**
- * Notification function used by Scintilla to call us back (e.g. for handling clicks on the 
+ * Method receives notifications from Scintilla (e.g. for handling clicks on the
  * folder margin or changes in the editor).
+ * A delegate can be set to receive all notifications. If set no handling takes place here, except
+ * for action pertaining to internal stuff (like the info bar).
  */
-static void notification(intptr_t windowid, unsigned int iMessage, uintptr_t wParam, uintptr_t lParam)
+- (void) notification: (Scintilla::SCNotification*)scn
 {
-  // WM_NOTIFY means we got a parent notification with a special notification structure.
-  // Here we don't really differentiate between parent and own notifications and handle both.
-  ScintillaView* editor;
-  switch (iMessage)
+  // Parent notification. Details are passed as SCNotification structure.
+
+  if (mDelegate != nil)
   {
-    case WM_NOTIFY:
+    [mDelegate notification: scn];
+    if (scn->nmhdr.code != SCN_ZOOM && scn->nmhdr.code != SCN_UPDATEUI)
+      return;
+  }
+
+  switch (scn->nmhdr.code)
+  {
+    case SCN_MARGINCLICK:
     {
-      // Parent notification. Details are passed as SCNotification structure.
-      SCNotification* scn = reinterpret_cast<SCNotification*>(lParam);
-      ScintillaCocoa *psc = reinterpret_cast<ScintillaCocoa*>(scn->nmhdr.hwndFrom);
-      editor = reinterpret_cast<InnerView*>(psc->ContentView()).owner;
-      switch (scn->nmhdr.code)
+      if (scn->margin == 2)
       {
-        case SCN_MARGINCLICK:
-        {
-          if (scn->margin == 2)
-          {
-            // Click on the folder margin. Toggle the current line if possible.
-            long line = [editor getGeneralProperty: SCI_LINEFROMPOSITION parameter: scn->position];
-            [editor setGeneralProperty: SCI_TOGGLEFOLD value: line];
-          }
-          break;
-          };
-        case SCN_MODIFIED:
-        {
-          // Decide depending on the modification type what to do.
-          // There can be more than one modification carried by one notification.
-          if (scn->modificationType & (SC_MOD_INSERTTEXT | SC_MOD_DELETETEXT))
-            [editor sendNotification: NSTextDidChangeNotification];
-          break;
-        }
-        case SCN_ZOOM:
-        {
-          // A zoom change happend. Notify info bar if there is one.
-          float zoom = [editor getGeneralProperty: SCI_GETZOOM parameter: 0];
-          long fontSize = [editor getGeneralProperty: SCI_STYLEGETSIZE parameter: STYLE_DEFAULT];
-          float factor = (zoom / fontSize) + 1;
-          [editor->mInfoBar notify: IBNZoomChanged message: nil location: NSZeroPoint value: factor];
-          break;
-        }
-        case SCN_UPDATEUI:
-        {
-          // Triggered whenever changes in the UI state need to be reflected.
-          // These can be: caret changes, selection changes etc.
-          NSPoint caretPosition = editor->mBackend->GetCaretPosition();
-          [editor->mInfoBar notify: IBNCaretChanged message: nil location: caretPosition value: 0];
-          [editor sendNotification: SCIUpdateUINotification];
-          [editor sendNotification: NSTextViewDidChangeSelectionNotification];
-          break;
+	// Click on the folder margin. Toggle the current line if possible.
+	long line = [self getGeneralProperty: SCI_LINEFROMPOSITION parameter: scn->position];
+	[self setGeneralProperty: SCI_TOGGLEFOLD value: line];
       }
+      break;
+    };
+    case SCN_MODIFIED:
+    {
+      // Decide depending on the modification type what to do.
+      // There can be more than one modification carried by one notification.
+      if (scn->modificationType & (SC_MOD_INSERTTEXT | SC_MOD_DELETETEXT))
+	[self sendNotification: NSTextDidChangeNotification];
+      break;
+    }
+    case SCN_ZOOM:
+    {
+      // A zoom change happened. Notify info bar if there is one.
+      float zoom = [self getGeneralProperty: SCI_GETZOOM parameter: 0];
+      long fontSize = [self getGeneralProperty: SCI_STYLEGETSIZE parameter: STYLE_DEFAULT];
+      float factor = (zoom / fontSize) + 1;
+      [mInfoBar notify: IBNZoomChanged message: nil location: NSZeroPoint value: factor];
+      break;
+    }
+    case SCN_UPDATEUI:
+    {
+      // Triggered whenever changes in the UI state need to be reflected.
+      // These can be: caret changes, selection changes etc.
+      NSPoint caretPosition = mBackend->GetCaretPosition();
+      [mInfoBar notify: IBNCaretChanged message: nil location: caretPosition value: 0];
+      [self sendNotification: SCIUpdateUINotification];
+      if (scn->updated & (SC_UPDATE_SELECTION | SC_UPDATE_CONTENT))
+      {
+	[self sendNotification: NSTextViewDidChangeSelectionNotification];
       }
       break;
     }
-    case WM_COMMAND:
-    {
-      // Notifications for the editor itself.
-      ScintillaCocoa* backend = reinterpret_cast<ScintillaCocoa*>(lParam);
-      editor = backend->TopContainer();
-      switch (wParam >> 16)
-      {
-        case SCEN_KILLFOCUS:
-          [editor sendNotification: NSTextDidEndEditingNotification];
-          break;
-        case SCEN_SETFOCUS: // Nothing to do for now.
-          break;
-      }
+    case SCN_FOCUSOUT:
+      [self sendNotification: NSTextDidEndEditingNotification];
       break;
-    }
-  };
+    case SCN_FOCUSIN: // Nothing to do for now.
+      break;
+  }
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -809,49 +1081,60 @@ static void notification(intptr_t windowid, unsigned int iMessage, uintptr_t wPa
   self = [super initWithFrame:frame];
   if (self)
   {
-    mContent = [[[InnerView alloc] init] autorelease];
-    mBackend = new ScintillaCocoa(mContent);
+    mContent = [[[[[self class] contentViewClass] alloc] initWithFrame:NSZeroRect] autorelease];
     mContent.owner = self;
-    [self addSubview: mContent];
-    
+
     // Initialize the scrollers but don't show them yet.
     // Pick an arbitrary size, just to make NSScroller selecting the proper scroller direction
     // (horizontal or vertical).
     NSRect scrollerRect = NSMakeRect(0, 0, 100, 10);
-    mHorizontalScroller = [[[NSScroller alloc] initWithFrame: scrollerRect] autorelease];
-    [mHorizontalScroller setHidden: YES];
-    [mHorizontalScroller setTarget: self];
-    [mHorizontalScroller setAction: @selector(scrollerAction:)];
-    [self addSubview: mHorizontalScroller];
-    
-    scrollerRect.size = NSMakeSize(10, 100);
-    mVerticalScroller = [[[NSScroller alloc] initWithFrame: scrollerRect] autorelease];
-    [mVerticalScroller setHidden: YES];
-    [mVerticalScroller setTarget: self];
-    [mVerticalScroller setAction: @selector(scrollerAction:)];
-    [self addSubview: mVerticalScroller];
-    
+    scrollView = [[[NSScrollView alloc] initWithFrame: scrollerRect] autorelease];
+    [scrollView setDocumentView: mContent];
+    [scrollView setHasVerticalScroller:YES];
+    [scrollView setHasHorizontalScroller:YES];
+    [scrollView setAutoresizingMask:NSViewWidthSizable|NSViewHeightSizable];
+    //[scrollView setScrollerStyle:NSScrollerStyleLegacy];
+    //[scrollView setScrollerKnobStyle:NSScrollerKnobStyleDark];
+    //[scrollView setHorizontalScrollElasticity:NSScrollElasticityNone];
+    [self addSubview: scrollView];
+
+    marginView = [[SCIMarginView alloc] initWithScrollView:scrollView];
+    marginView.owner = self;
+    [marginView setRuleThickness:[marginView requiredThickness]];
+    [scrollView setVerticalRulerView:marginView];
+    [scrollView setHasHorizontalRuler:NO];
+    [scrollView setHasVerticalRuler:YES];
+    [scrollView setRulersVisible:YES];
+
+    mBackend = new ScintillaCocoa(mContent, marginView);
+
     // Establish a connection from the back end to this container so we can handle situations
     // which require our attention.
-    mBackend->RegisterNotifyCallback(nil, notification);
-    
-    // Setup a special indicator used in the editor to provide visual feedback for 
+    mBackend->SetDelegate(self);
+
+    // Setup a special indicator used in the editor to provide visual feedback for
     // input composition, depending on language, keyboard etc.
     [self setColorProperty: SCI_INDICSETFORE parameter: INPUT_INDICATOR fromHTML: @"#FF0000"];
     [self setGeneralProperty: SCI_INDICSETUNDER parameter: INPUT_INDICATOR value: 1];
     [self setGeneralProperty: SCI_INDICSETSTYLE parameter: INPUT_INDICATOR value: INDIC_PLAIN];
     [self setGeneralProperty: SCI_INDICSETALPHA parameter: INPUT_INDICATOR value: 100];
-      
+
     NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
     [center addObserver:self
                selector:@selector(applicationDidResignActive:)
                    name:NSApplicationDidResignActiveNotification
                  object:nil];
-      
+
     [center addObserver:self
                selector:@selector(applicationDidBecomeActive:)
                    name:NSApplicationDidBecomeActiveNotification
                  object:nil];
+
+    [[scrollView contentView] setPostsBoundsChangedNotifications:YES];
+    [center addObserver:self
+	       selector:@selector(scrollerAction:)
+		   name:NSViewBoundsDidChangeNotification
+		 object:[scrollView contentView]];
   }
   return self;
 }
@@ -861,8 +1144,8 @@ static void notification(intptr_t windowid, unsigned int iMessage, uintptr_t wPa
 - (void) dealloc
 {
   [[NSNotificationCenter defaultCenter] removeObserver:self];
-  [mInfoBar release];
   delete mBackend;
+  [marginView release];
   [super dealloc];
 }
 
@@ -885,9 +1168,9 @@ static void notification(intptr_t windowid, unsigned int iMessage, uintptr_t wPa
 - (void) viewDidMoveToWindow
 {
   [super viewDidMoveToWindow];
-  
+
   [self positionSubViews];
-  
+
   // Enable also mouse move events for our window (and so this view).
   [[self window] setAcceptsMouseMovedEvents: YES];
 }
@@ -902,193 +1185,46 @@ static void notification(intptr_t windowid, unsigned int iMessage, uintptr_t wPa
   int scrollerWidth = [NSScroller scrollerWidth];
 
   NSSize size = [self frame].size;
-  NSRect hScrollerRect = {0, 0, size.width, scrollerWidth};
-  NSRect vScrollerRect = {size.width - scrollerWidth, 0, scrollerWidth, size.height};
-  NSRect barFrame = {0, size.height - scrollerWidth, size.width, scrollerWidth};
+  NSRect barFrame = {0, size.height - scrollerWidth, size.width, static_cast<CGFloat>(scrollerWidth)};
   BOOL infoBarVisible = mInfoBar != nil && ![mInfoBar isHidden];
-  
+
   // Horizontal offset of the content. Almost always 0 unless the vertical scroller
   // is on the left side.
-  int contentX = 0;
-  
-  // Vertical scroller frame calculation.
-  if (![mVerticalScroller isHidden])
-  {
-    // Consider user settings (left vs right vertical scrollbar).
-    BOOL isLeft = [[[NSUserDefaults standardUserDefaults] stringForKey: @"NSScrollerPosition"] 
-                   isEqualToString: @"left"];
-    if (isLeft)
-    {
-      vScrollerRect.origin.x = 0;
-      hScrollerRect.origin.x = scrollerWidth;
-      contentX = scrollerWidth;
-    };
-    
-    size.width -= scrollerWidth;
-    hScrollerRect.size.width -= scrollerWidth;
-  }
-  
-  // Same for horizontal scroller.
-  if (![mHorizontalScroller isHidden])
-  {
-    // Make room for the h-scroller.
-    size.height -= scrollerWidth;
-    vScrollerRect.size.height -= scrollerWidth;
-    vScrollerRect.origin.y += scrollerWidth;
-  };
-  
+  CGFloat contentX = 0;
+  NSRect scrollRect = {contentX, 0, size.width, size.height};
+
   // Info bar frame.
   if (infoBarVisible)
   {
+    scrollRect.size.height -= scrollerWidth;
     // Initial value already is as if the bar is at top.
-    if (mInfoBarAtTop)
+    if (!mInfoBarAtTop)
     {
-      vScrollerRect.size.height -= scrollerWidth;
-      size.height -= scrollerWidth;
-    }
-    else
-    {
-      // Layout info bar and h-scroller side by side in a friendly manner.
-      int nativeWidth = mInitialInfoBarWidth;
-      int remainingWidth = barFrame.size.width;
-      
+      scrollRect.origin.y += scrollerWidth;
       barFrame.origin.y = 0;
-
-      if ([mHorizontalScroller isHidden])
-      {
-        // H-scroller is not visible, so take the full space.
-        vScrollerRect.origin.y += scrollerWidth;
-        vScrollerRect.size.height -= scrollerWidth;
-        size.height -= scrollerWidth;
-      }
-      else
-      {
-        // If the left offset of the h-scroller is > 0 then the v-scroller is on the left side.
-        // In this case we take the full width, otherwise what has been given to the h-scroller 
-        // and content up to now.
-        if (hScrollerRect.origin.x == 0)
-          remainingWidth = size.width;
-
-        // Note: remainingWidth can become < 0, which hides the scroller.
-        remainingWidth -= nativeWidth;
-
-        hScrollerRect.origin.x = nativeWidth;
-        hScrollerRect.size.width = remainingWidth;
-        barFrame.size.width = nativeWidth;
-      }
     }
   }
-  
-  NSRect contentRect = {contentX, vScrollerRect.origin.y, size.width, size.height};
-  [mContent setFrame: contentRect];
-  
+
+  if (!NSEqualRects([scrollView frame], scrollRect)) {
+    [scrollView setFrame: scrollRect];
+  }
+
   if (infoBarVisible)
     [mInfoBar setFrame: barFrame];
-  if (![mHorizontalScroller isHidden])
-    [mHorizontalScroller setFrame: hScrollerRect];
-  if (![mVerticalScroller isHidden])
-    [mVerticalScroller setFrame: vScrollerRect];
 }
 
 //--------------------------------------------------------------------------------------------------
 
 /**
- * Called by the backend to adjust the vertical scroller (range and page).
- *
- * @param range Determines the total size of the scroll area used in the editor.
- * @param page Determines how many pixels a page is.
- * @result Returns YES if anything changed, otherwise NO.
+ * Set the width of the margin.
  */
-- (BOOL) setVerticalScrollRange: (int) range page: (int) page
+- (void) setMarginWidth: (int) width
 {
-  BOOL result = NO;
-  BOOL hideScroller = page >= range;
-  
-  if ([mVerticalScroller isHidden] != hideScroller)
+  if (marginView.ruleThickness != width)
   {
-    result = YES;
-    [mVerticalScroller setHidden: hideScroller];
-    if (!hideScroller)
-      [mVerticalScroller setFloatValue: 0];
-    [self positionSubViews];
+    marginView.marginWidth = width;
+    [marginView setRuleThickness:[marginView requiredThickness]];
   }
-  
-  if (!hideScroller)
-  {
-    [mVerticalScroller setEnabled: YES];
-    
-    CGFloat currentProportion = [mVerticalScroller knobProportion];
-    CGFloat newProportion = page / (CGFloat) range;
-    if (currentProportion != newProportion)
-    {
-      result = YES;
-      [mVerticalScroller setKnobProportion: newProportion];
-    }
-  }
-  
-  return result;
-}
-
-//--------------------------------------------------------------------------------------------------
-
-/**
- * Used to set the position of the vertical scroll thumb.
- *
- * @param position The relative position in the rang [0..1];
- */
-- (void) setVerticalScrollPosition: (float) position
-{
-  [mVerticalScroller setFloatValue: position];
-}
-
-//--------------------------------------------------------------------------------------------------
-
-/**
- * Called by the backend to adjust the horizontal scroller (range and page).
- *
- * @param range Determines the total size of the scroll area used in the editor.
- * @param page Determines how many pixels a page is.
- * @result Returns YES if anything changed, otherwise NO.
- */
-- (BOOL) setHorizontalScrollRange: (int) range page: (int) page
-{
-  BOOL result = NO;
-  BOOL hideScroller = (page >= range) || 
-    (mBackend->WndProc(SCI_GETWRAPMODE, 0, 0) != SC_WRAP_NONE);
-  
-  if ([mHorizontalScroller isHidden] != hideScroller)
-  {
-    result = YES;
-    [mHorizontalScroller setHidden: hideScroller];
-    [self positionSubViews];
-  }
-  
-  if (!hideScroller)
-  {
-    [mHorizontalScroller setEnabled: YES];
-    
-    CGFloat currentProportion = [mHorizontalScroller knobProportion];
-    CGFloat newProportion = page / (CGFloat) range;
-    if (currentProportion != newProportion)
-    {
-      result = YES;
-      [mHorizontalScroller setKnobProportion: newProportion];
-    }
-  }
-  
-  return result;
-}
-
-//--------------------------------------------------------------------------------------------------
-
-/**
- * Used to set the position of the vertical scroll thumb.
- *
- * @param position The relative position in the rang [0..1];
- */
-- (void) setHorizontalScrollPosition: (float) position
-{
-  [mHorizontalScroller setFloatValue: position];
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1099,8 +1235,7 @@ static void notification(intptr_t windowid, unsigned int iMessage, uintptr_t wPa
  */
 - (void) scrollerAction: (id) sender
 {
-  float position = [sender doubleValue];
-  mBackend->DoScroll(position, [sender hitPart], sender == mHorizontalScroller);
+  mBackend->UpdateForScroll();
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1110,8 +1245,12 @@ static void notification(intptr_t windowid, unsigned int iMessage, uintptr_t wPa
  */
 - (void) setFrame: (NSRect) newFrame
 {
+  NSRect previousFrame = [self frame];
   [super setFrame: newFrame];
   [self positionSubViews];
+  if (!NSEqualRects(previousFrame, newFrame)) {
+    mBackend->Resize();
+  }
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1123,28 +1262,36 @@ static void notification(intptr_t windowid, unsigned int iMessage, uintptr_t wPa
 - (NSString*) selectedString
 {
   NSString *result = @"";
-  
-  char *buffer(0);
+
   const long length = mBackend->WndProc(SCI_GETSELTEXT, 0, 0);
   if (length > 0)
   {
-    buffer = new char[length + 1];
+    std::string buffer(length + 1, '\0');
     try
     {
-      mBackend->WndProc(SCI_GETSELTEXT, length + 1, (sptr_t) buffer);
-      mBackend->WndProc(SCI_SETSAVEPOINT, 0, 0);
-      
-      result = [NSString stringWithUTF8String: buffer];
-      delete[] buffer;
+      mBackend->WndProc(SCI_GETSELTEXT, length + 1, (sptr_t) &buffer[0]);
+
+      result = [NSString stringWithUTF8String: buffer.c_str()];
     }
     catch (...)
     {
-      delete[] buffer;
-      buffer = 0;
     }
   }
-  
+
   return result;
+}
+
+//--------------------------------------------------------------------------------------------------
+
+/**
+ * Delete a range from the document.
+ */
+- (void) deleteRange: (NSRange) aRange
+{
+  if (aRange.length > 0)
+  {
+    [self message: SCI_DELETERANGE wParam: aRange.location lParam: aRange.length];
+  }
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1156,27 +1303,22 @@ static void notification(intptr_t windowid, unsigned int iMessage, uintptr_t wPa
 - (NSString*) string
 {
   NSString *result = @"";
-  
-  char *buffer(0);
+
   const long length = mBackend->WndProc(SCI_GETLENGTH, 0, 0);
   if (length > 0)
   {
-    buffer = new char[length + 1];
+    std::string buffer(length + 1, '\0');
     try
     {
-      mBackend->WndProc(SCI_GETTEXT, length + 1, (sptr_t) buffer);
-      mBackend->WndProc(SCI_SETSAVEPOINT, 0, 0);
-      
-      result = [NSString stringWithUTF8String: buffer];
-      delete[] buffer;
+      mBackend->WndProc(SCI_GETTEXT, length + 1, (sptr_t) &buffer[0]);
+
+      result = [NSString stringWithUTF8String: buffer.c_str()];
     }
     catch (...)
     {
-      delete[] buffer;
-      buffer = 0;
     }
   }
-  
+
   return result;
 }
 
@@ -1215,9 +1357,15 @@ static void notification(intptr_t windowid, unsigned int iMessage, uintptr_t wPa
 
 //--------------------------------------------------------------------------------------------------
 
-- (InnerView*) content
+- (SCIContentView*) content
 {
   return mContent;
+}
+
+//--------------------------------------------------------------------------------------------------
+
+- (void) updateMarginCursors {
+  [[self window] invalidateCursorRectsForView: marginView];
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1230,7 +1378,23 @@ static void notification(intptr_t windowid, unsigned int iMessage, uintptr_t wPa
 + (sptr_t) directCall: (ScintillaView*) sender message: (unsigned int) message wParam: (uptr_t) wParam
                lParam: (sptr_t) lParam
 {
-  return ScintillaCocoa::DirectFunction(sender->mBackend, message, wParam, lParam);
+  return ScintillaCocoa::DirectFunction(
+    reinterpret_cast<sptr_t>(sender->mBackend), message, wParam, lParam);
+}
+
+- (sptr_t) message: (unsigned int) message wParam: (uptr_t) wParam lParam: (sptr_t) lParam
+{
+  return mBackend->WndProc(message, wParam, lParam);
+}
+
+- (sptr_t) message: (unsigned int) message wParam: (uptr_t) wParam
+{
+  return mBackend->WndProc(message, wParam, 0);
+}
+
+- (sptr_t) message: (unsigned int) message
+{
+  return mBackend->WndProc(message, 0, 0);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1302,7 +1466,7 @@ static void notification(intptr_t windowid, unsigned int iMessage, uintptr_t wPa
  */
 - (long) getGeneralProperty: (int) property ref: (const void*) ref
 {
-  return mBackend->WndProc(property, 0, (sptr_t) ref);  
+  return mBackend->WndProc(property, 0, (sptr_t) ref);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1317,7 +1481,7 @@ static void notification(intptr_t windowid, unsigned int iMessage, uintptr_t wPa
   long red = [value redComponent] * 255;
   long green = [value greenComponent] * 255;
   long blue = [value blueComponent] * 255;
-  
+
   long color = (blue << 16) + (green << 8) + red;
   mBackend->WndProc(property, parameter, color);
 }
@@ -1334,7 +1498,7 @@ static void notification(intptr_t windowid, unsigned int iMessage, uintptr_t wPa
   {
     bool longVersion = [fromHTML length] > 6;
     int index = 1;
-    
+
     char value[3] = {0, 0, 0};
     value[0] = [fromHTML characterAtIndex: index++];
     if (longVersion)
@@ -1350,7 +1514,7 @@ static void notification(intptr_t windowid, unsigned int iMessage, uintptr_t wPa
       value[1] = [fromHTML characterAtIndex: index++];
     else
       value[1] = value[0];
-    
+
     unsigned rawGreen;
     [[NSScanner scannerWithString: [NSString stringWithUTF8String: value]] scanHexInt: &rawGreen];
 
@@ -1359,7 +1523,7 @@ static void notification(intptr_t windowid, unsigned int iMessage, uintptr_t wPa
       value[1] = [fromHTML characterAtIndex: index++];
     else
       value[1] = value[0];
-    
+
     unsigned rawBlue;
     [[NSScanner scannerWithString: [NSString stringWithUTF8String: value]] scanHexInt: &rawBlue];
 
@@ -1466,9 +1630,6 @@ static void notification(intptr_t windowid, unsigned int iMessage, uintptr_t wPa
 /**
  * Sets the new control which is displayed as info bar at the top or bottom of the editor.
  * Set newBar to nil if you want to hide the bar again.
- * When aligned to bottom position then the info bar and the horizontal scroller share the available
- * space. The info bar will then only get the width it is currently set to less a minimal amount
- * reserved for the scroller. At the top position it gets the full width of the control.
  * The info bar's height is set to the height of the scrollbar.
  */
 - (void) setInfoBar: (NSView <InfoBarCommunicator>*) newBar top: (BOOL) top
@@ -1476,18 +1637,15 @@ static void notification(intptr_t windowid, unsigned int iMessage, uintptr_t wPa
   if (mInfoBar != newBar)
   {
     [mInfoBar removeFromSuperview];
-    
+
     mInfoBar = newBar;
     mInfoBarAtTop = top;
     if (mInfoBar != nil)
     {
       [self addSubview: mInfoBar];
       [mInfoBar setCallback: self];
-      
-      // Keep the initial width as reference for layout changes.
-      mInitialInfoBarWidth = [mInfoBar frame].size.width;
     }
-    
+
     [self positionSubViews];
   }
 }
@@ -1512,57 +1670,203 @@ static void notification(intptr_t windowid, unsigned int iMessage, uintptr_t wPa
 
 //--------------------------------------------------------------------------------------------------
 
-- (void)insertText: (NSString*)text
+- (void)insertText: (id) aString
 {
-  [mContent insertText: text];
+  if ([aString isKindOfClass:[NSString class]])
+    mBackend->InsertText(aString);
+  else if ([aString isKindOfClass:[NSAttributedString class]])
+    mBackend->InsertText([aString string]);
 }
 
 //--------------------------------------------------------------------------------------------------
 
 /**
- * Searches and marks the first occurance of the given text and optionally scrolls it into view.
+ * For backwards compatibility.
  */
-- (void) findAndHighlightText: (NSString*) searchText
+- (BOOL) findAndHighlightText: (NSString*) searchText
                     matchCase: (BOOL) matchCase
                     wholeWord: (BOOL) wholeWord
                      scrollTo: (BOOL) scrollTo
                          wrap: (BOOL) wrap
 {
-  // The current position is where we start searching. That is either the end of the current
-  // (main) selection or the caret position. That ensures we do proper "search next" too.
-  long currentPosition = [self getGeneralProperty: SCI_GETCURRENTPOS parameter: 0];
-  long length = [self getGeneralProperty: SCI_GETTEXTLENGTH parameter: 0];
+  return [self findAndHighlightText: searchText
+                          matchCase: matchCase
+                          wholeWord: wholeWord
+                           scrollTo: scrollTo
+                               wrap: wrap
+                          backwards: NO];
+}
 
+//--------------------------------------------------------------------------------------------------
+
+/**
+ * Searches and marks the first occurrence of the given text and optionally scrolls it into view.
+ *
+ * @result YES if something was found, NO otherwise.
+ */
+- (BOOL) findAndHighlightText: (NSString*) searchText
+                    matchCase: (BOOL) matchCase
+                    wholeWord: (BOOL) wholeWord
+                     scrollTo: (BOOL) scrollTo
+                         wrap: (BOOL) wrap
+                    backwards: (BOOL) backwards
+{
   int searchFlags= 0;
   if (matchCase)
     searchFlags |= SCFIND_MATCHCASE;
   if (wholeWord)
     searchFlags |= SCFIND_WHOLEWORD;
 
-  Sci_TextToFind ttf;
-  ttf.chrg.cpMin = currentPosition;
-  ttf.chrg.cpMax = length;
-  ttf.lpstrText = (char*) [searchText UTF8String];
-  long position = mBackend->WndProc(SCI_FINDTEXT, searchFlags, (sptr_t) &ttf);
-  
-  if (position < 0 && wrap)
+  int selectionStart = [self getGeneralProperty: SCI_GETSELECTIONSTART parameter: 0];
+  int selectionEnd = [self getGeneralProperty: SCI_GETSELECTIONEND parameter: 0];
+
+  // Sets the start point for the coming search to the beginning of the current selection.
+  // For forward searches we have therefore to set the selection start to the current selection end
+  // for proper incremental search. This does not harm as we either get a new selection if something
+  // is found or the previous selection is restored.
+  if (!backwards)
+    [self getGeneralProperty: SCI_SETSELECTIONSTART parameter: selectionEnd];
+  [self setGeneralProperty: SCI_SEARCHANCHOR value: 0];
+  sptr_t result;
+  const char* textToSearch = [searchText UTF8String];
+
+  // The following call will also set the selection if something was found.
+  if (backwards)
   {
-    ttf.chrg.cpMin = 0;
-    ttf.chrg.cpMax = currentPosition;
-    position = mBackend->WndProc(SCI_FINDTEXT, searchFlags, (sptr_t) &ttf);
+    result = [ScintillaView directCall: self
+                               message: SCI_SEARCHPREV
+                                wParam: searchFlags
+                                lParam: (sptr_t) textToSearch];
+    if (result < 0 && wrap)
+    {
+      // Try again from the end of the document if nothing could be found so far and
+      // wrapped search is set.
+      [self getGeneralProperty: SCI_SETSELECTIONSTART parameter: [self getGeneralProperty: SCI_GETTEXTLENGTH parameter: 0]];
+      [self setGeneralProperty: SCI_SEARCHANCHOR value: 0];
+      result = [ScintillaView directCall: self
+                                 message: SCI_SEARCHNEXT
+                                  wParam: searchFlags
+                                  lParam: (sptr_t) textToSearch];
+    }
   }
-  
-  if (position >= 0)
+  else
   {
-    // Highlight the found text.
-    [self setGeneralProperty: SCI_SETSELECTIONSTART
-                       value: position];
-    [self setGeneralProperty: SCI_SETSELECTIONEND
-                       value: position + [searchText length]];
-    
+    result = [ScintillaView directCall: self
+                               message: SCI_SEARCHNEXT
+                                wParam: searchFlags
+                                lParam: (sptr_t) textToSearch];
+    if (result < 0 && wrap)
+    {
+      // Try again from the start of the document if nothing could be found so far and
+      // wrapped search is set.
+      [self getGeneralProperty: SCI_SETSELECTIONSTART parameter: 0];
+      [self setGeneralProperty: SCI_SEARCHANCHOR value: 0];
+      result = [ScintillaView directCall: self
+                                 message: SCI_SEARCHNEXT
+                                  wParam: searchFlags
+                                  lParam: (sptr_t) textToSearch];
+    }
+  }
+
+  if (result >= 0)
+  {
     if (scrollTo)
       [self setGeneralProperty: SCI_SCROLLCARET value: 0];
   }
+  else
+  {
+    // Restore the former selection if we did not find anything.
+    [self setGeneralProperty: SCI_SETSELECTIONSTART value: selectionStart];
+    [self setGeneralProperty: SCI_SETSELECTIONEND value: selectionEnd];
+  }
+  return (result >= 0) ? YES : NO;
+}
+
+//--------------------------------------------------------------------------------------------------
+
+/**
+ * Searches the given text and replaces
+ *
+ * @result Number of entries replaced, 0 if none.
+ */
+- (int) findAndReplaceText: (NSString*) searchText
+                    byText: (NSString*) newText
+                 matchCase: (BOOL) matchCase
+                 wholeWord: (BOOL) wholeWord
+                     doAll: (BOOL) doAll
+{
+  // The current position is where we start searching for single occurrences. Otherwise we start at
+  // the beginning of the document.
+  int startPosition;
+  if (doAll)
+    startPosition = 0; // Start at the beginning of the text if we replace all occurrences.
+  else
+    // For a single replacement we start at the current caret position.
+    startPosition = [self getGeneralProperty: SCI_GETCURRENTPOS];
+  int endPosition = [self getGeneralProperty: SCI_GETTEXTLENGTH];
+
+  int searchFlags= 0;
+  if (matchCase)
+    searchFlags |= SCFIND_MATCHCASE;
+  if (wholeWord)
+    searchFlags |= SCFIND_WHOLEWORD;
+  [self setGeneralProperty: SCI_SETSEARCHFLAGS value: searchFlags];
+  [self setGeneralProperty: SCI_SETTARGETSTART value: startPosition];
+  [self setGeneralProperty: SCI_SETTARGETEND value: endPosition];
+
+  const char* textToSearch = [searchText UTF8String];
+  int sourceLength = strlen(textToSearch); // Length in bytes.
+  const char* replacement = [newText UTF8String];
+  int targetLength = strlen(replacement);  // Length in bytes.
+  sptr_t result;
+
+  int replaceCount = 0;
+  if (doAll)
+  {
+    while (true)
+    {
+      result = [ScintillaView directCall: self
+                                 message: SCI_SEARCHINTARGET
+                                  wParam: sourceLength
+                                  lParam: (sptr_t) textToSearch];
+      if (result < 0)
+        break;
+
+      replaceCount++;
+      [ScintillaView directCall: self
+                                 message: SCI_REPLACETARGET
+                                  wParam: targetLength
+                                  lParam: (sptr_t) replacement];
+
+      // The replacement changes the target range to the replaced text. Continue after that till the end.
+      // The text length might be changed by the replacement so make sure the target end is the actual
+      // text end.
+      [self setGeneralProperty: SCI_SETTARGETSTART value: [self getGeneralProperty: SCI_GETTARGETEND]];
+      [self setGeneralProperty: SCI_SETTARGETEND value: [self getGeneralProperty: SCI_GETTEXTLENGTH]];
+    }
+  }
+  else
+  {
+    result = [ScintillaView directCall: self
+                               message: SCI_SEARCHINTARGET
+                                wParam: sourceLength
+                                lParam: (sptr_t) textToSearch];
+    replaceCount = (result < 0) ? 0 : 1;
+
+    if (replaceCount > 0)
+    {
+      [ScintillaView directCall: self
+                                 message: SCI_REPLACETARGET
+                                  wParam: targetLength
+                                  lParam: (sptr_t) replacement];
+
+    // For a single replace we set the new selection to the replaced text.
+    [self setGeneralProperty: SCI_SETSELECTIONSTART value: [self getGeneralProperty: SCI_GETTARGETSTART]];
+    [self setGeneralProperty: SCI_SETSELECTIONEND value: [self getGeneralProperty: SCI_GETTARGETEND]];
+    }
+  }
+
+  return replaceCount;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1572,7 +1876,7 @@ static void notification(intptr_t windowid, unsigned int iMessage, uintptr_t wPa
                 bold: (BOOL) bold
                 italic: (BOOL) italic
 {
-  for (int i = 0; i < 32; i++)
+  for (int i = 0; i < 128; i++)
   {
     [self setGeneralProperty: SCI_STYLESETFONT
                    parameter: i

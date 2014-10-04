@@ -35,7 +35,7 @@
 
 // ATL/WTL
 #define _WTL_USE_CSTRING
-#define _WTL_NO_WTYPES
+//#define _WTL_NO_WTYPES
 #include <atlbase.h>
 #include <atlapp.h>
 

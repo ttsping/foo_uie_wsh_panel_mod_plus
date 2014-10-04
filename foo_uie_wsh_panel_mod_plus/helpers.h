@@ -9,6 +9,9 @@ namespace helpers
 {
     bool execute_context_command_by_name(const char * p_name, metadb_handle_list_cref p_handles, unsigned flags);
 	bool execute_mainmenu_command_by_name(const char * p_name);
+
+	t_uint32 get_mainmenu_command_flags_by_name(const char * p_name);
+
     unsigned detect_charset(const char * fileName);
 
 	inline int get_text_width(HDC hdc, LPCTSTR text, int len)
@@ -80,6 +83,22 @@ namespace helpers
 		__except (EXCEPTION_EXECUTE_HANDLER)
 		{
 			ret = false;
+		}
+
+		return ret;
+	}
+
+	__declspec(noinline) static t_uint32 get_mainmenu_command_flags_by_name_SEH(const char * p_name)
+	{
+		t_uint32 ret = 0;
+
+		__try 
+		{
+			ret = get_mainmenu_command_flags_by_name(p_name);
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER)
+		{
+			ret = 0;
 		}
 
 		return ret;

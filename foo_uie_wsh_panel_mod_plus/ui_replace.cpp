@@ -59,6 +59,7 @@ LRESULT CDialogReplace::OnCancel(WORD wNotifyCode, WORD wID, HWND hWndCtl)
 
 void CDialogReplace::OnFinalMessage(HWND hWnd)
 {
+	console::info(__FUNCTION__);
 	modeless_dialog_manager::g_remove(m_hWnd);
 	delete this;
 }

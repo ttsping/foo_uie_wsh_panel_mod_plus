@@ -452,6 +452,13 @@ __interface IFbUtils: IDispatch
 	STDMETHOD(IsAutoPlaylist)(UINT idx, [out,retval] VARIANT_BOOL * p);
 	STDMETHOD(CreateAutoPlaylist)(UINT idx, BSTR name, BSTR query, [defaultvalue("")] BSTR sort, [defaultvalue(0)]UINT flags, [out,retval] UINT * p);
 	STDMETHOD(ShowAutoPlaylistUI)(UINT idx, [out,retval] VARIANT_BOOL * p);
+
+
+	//PLUS VERSION
+	STDMETHOD(IsMediaLibraryEnabled)([out,retval] VARIANT_BOOL * p);
+	STDMETHOD(GetAllItemsInMediaLibrary)([out,retval] IFbMetadbHandleList ** pp);
+	STDMETHOD(QueryMulti)(IFbMetadbHandleList * items , BSTR query , [out,retval] IFbMetadbHandleList ** pp);
+	STDMETHOD(GetMainMenuCommandStatus)(BSTR command , [out,retval] UINT *p);
 };
 _COM_SMARTPTR_TYPEDEF(IFbUtils, __uuidof(IFbUtils));
 

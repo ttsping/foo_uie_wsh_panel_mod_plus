@@ -929,7 +929,7 @@ void CScriptEditorCtrl::Init()
 	SetCodePage(SC_CP_UTF8);
 	SetEOLMode(SC_EOL_CRLF);
 	SetModEventMask(SC_MOD_INSERTTEXT | SC_MOD_DELETETEXT | SC_PERFORMED_UNDO | SC_PERFORMED_REDO);
-	UsePopUp(true);
+	UsePopUp(false);
 
     // Disable Ctrl + some char
     const int ctrlcode[22] =  {'Q', 'W', 'E', 'R', 'I', 'O', 'P', 'S', 'D', 'F',
@@ -1009,11 +1009,11 @@ void CScriptEditorCtrl::RestoreDefaultStyle()
 	StyleResetDefault();
 
 	// enable line numbering
-	SetMarginWidthN(1, 0);
+	//SetMarginWidthN(1, 0);
 	SetMarginWidthN(2, 0);
 	SetMarginWidthN(3, 0);
 	SetMarginWidthN(4, 0);
-	SetMarginTypeN(0, SC_MARGIN_NUMBER);
+	SetMarginTypeN(MARGIN_LINE_NUMBER, SC_MARGIN_NUMBER);
 
 	// Default styles
 	SetAllStylesFromTable(default_style_table);
@@ -1089,6 +1089,8 @@ void CScriptEditorCtrl::SetJScript()
 
 	// Set lexer
 	SetLexer(SCLEX_CPP);
+	// Set fold
+	SetFold();
 	// Set keywords
 	SetKeyWords(0, js_keywords);
 	// Set styles
@@ -1113,6 +1115,8 @@ void CScriptEditorCtrl::SetVBScript()
 
 	// Set lexer
 	SetLexer(SCLEX_VBSCRIPT);
+	// Set fold
+	SetFold();
 	// Set keywords
 	SetKeyWords(0, vbs_keywords);
 	// Set styles
@@ -1218,7 +1222,7 @@ void CScriptEditorCtrl::AutoMarginWidth()
 	marginwidth = 4 + linenumwidth * (TextWidth(STYLE_LINENUMBER, "9"));
 
 	if (oldmarginwidth != marginwidth)
-		SetMarginWidthN(0, marginwidth);
+		SetMarginWidthN(MARGIN_LINE_NUMBER, marginwidth);
 }
 
 BOOL CScriptEditorCtrl::SubclassWindow(HWND hWnd)
@@ -1275,6 +1279,44 @@ void CScriptEditorCtrl::SetIndentation(int line, int indent)
 	}
 
 	SetSel(crange.cpMin, crange.cpMax);
+}
+
+void CScriptEditorCtrl::SetFold()
+{
+	//Enable Folding
+	SetProperty("fold","1");
+	SetProperty("fold.compact","0");
+	//SetProperty("fold.comment","1");
+	SetProperty("fold.preprocessor","1");
+
+	SetMarginTypeN(MARGIN_FOLD,SC_MARGIN_SYMBOL);
+	SetMarginMaskN(MARGIN_FOLD,SC_MASK_FOLDERS);
+	SetMarginWidthN(MARGIN_FOLD,11);
+	SetMarginSensitiveN(MARGIN_FOLD,true);
+	
+	//Fold Style
+	MarkerDefine(SC_MARKNUM_FOLDEREND,SC_MARK_CHARACTER + '+');
+	MarkerDefine(SC_MARKNUM_FOLDEROPENMID,SC_MARK_CHARACTER + '-');
+	MarkerDefine(SC_MARKNUM_FOLDERMIDTAIL,SC_MARK_TCORNER);
+	MarkerDefine(SC_MARKNUM_FOLDERTAIL,SC_MARK_LCORNER);
+	MarkerDefine(SC_MARKNUM_FOLDERSUB,SC_MARK_VLINE); 
+	MarkerDefine(SC_MARKNUM_FOLDER,SC_MARK_CHARACTER + '+'); 
+	MarkerDefine(SC_MARKNUM_FOLDEROPEN,SC_MARK_CHARACTER + '-');
+
+
+	//Colors
+	SetFoldMarginColour(true,RGB(240,240,240));
+	SetFoldMarginHiColour(true,RGB(240,240,240));
+
+	MarkerSetBack(SC_MARKNUM_FOLDERSUB, RGB(160,160,160));
+	MarkerSetBack(SC_MARKNUM_FOLDERMIDTAIL, RGB(160,160,160));
+	MarkerSetBack(SC_MARKNUM_FOLDERTAIL, RGB(160,160,160));
+	MarkerSetBack(SC_MARKNUM_FOLDER, RGB(240,240,240));
+	MarkerSetBack(SC_MARKNUM_FOLDEROPEN, RGB(240,240,240));
+	MarkerSetBack(SC_MARKNUM_FOLDEREND, RGB(240,240,240));
+	MarkerSetBack(SC_MARKNUM_FOLDEROPENMID, RGB(240,240,240));
+
+	SetFoldFlags(SC_FOLDFLAG_LINEBEFORE_CONTRACTED | SC_FOLDFLAG_LINEAFTER_CONTRACTED);
 }
 
 void CScriptEditorCtrl::ReadAPI()
@@ -1460,3 +1502,4 @@ LRESULT CScriptEditorCtrl::OnChange(UINT uNotifyCode, int nID, HWND wndCtl)
 
 	return 0;
 }
+

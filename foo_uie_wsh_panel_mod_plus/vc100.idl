@@ -465,6 +465,11 @@ interface IFbTitleFormat;
 		HRESULT  IsAutoPlaylist([in]UINT idx, [out,retval] VARIANT_BOOL *p);
 		HRESULT  CreateAutoPlaylist([in]UINT idx, [in]BSTR name, [in]BSTR query, [defaultvalue("")] BSTR sort, [defaultvalue(0)] UINT flags, [out,retval] UINT *p);
 		HRESULT  ShowAutoPlaylistUI([in]UINT idx, [out,retval] VARIANT_BOOL *p);
+#line 458 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
+		HRESULT  IsMediaLibraryEnabled([out,retval] VARIANT_BOOL *p);
+		HRESULT  GetAllItemsInMediaLibrary([out,retval] IFbMetadbHandleList **pp);
+		HRESULT  QueryMulti([in]IFbMetadbHandleList *items, [in]BSTR query, [out,retval] IFbMetadbHandleList **pp);
+		HRESULT  GetMainMenuCommandStatus([in]BSTR command, [out,retval] UINT *p);
 	};
 
 	[
@@ -474,9 +479,9 @@ interface IFbTitleFormat;
 		custom(8AFCDA7F-33B7-3120-86A8-754D2C0C0578, "library_block"),
 		uuid(c74bdea4-4587-45c2-b0a7-91fae0cdf1a4)
 	] 
-#line 466 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
+#line 473 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
 	interface ITimerObj : IDisposable {
-#line 468 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
+#line 475 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
 		[propget] HRESULT  ID([out,retval] UINT *p);
 	};
 
@@ -487,13 +492,13 @@ interface IFbTitleFormat;
 		custom(8AFCDA7F-33B7-3120-86A8-754D2C0C0578, "library_block"),
 		uuid(8a14d6a2-4582-4398-a6af-2206f2dabbbe)
 	] 
-#line 479 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
+#line 486 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
 	interface IThemeManager : IDisposable {
-#line 481 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
+#line 488 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
 		HRESULT  SetPartAndStateID([in]int partid, [in]int stateid);
 		HRESULT  IsThemePartDefined([in]int partid, [defaultvalue(0)] int stateid, [out,retval] VARIANT_BOOL *p);
 		HRESULT  DrawThemeBackground([in]IGdiGraphics *gr, [in]int x, [in]int y, [in]int w, [in]int h, [defaultvalue(0)] int clip_x, [defaultvalue(0)] int clip_y, [defaultvalue(0)] int clip_w, [defaultvalue(0)] int clip_h);
-#line 485 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
+#line 492 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
 		HRESULT  DrawThemeTextEx([in]IGdiGraphics *gr, [in]BSTR text, [in]int color, [in]int x, [in]int y, [in]int w, [in]int h, [defaultvalue(5)] int glow_size, [defaultvalue(0)] int format);
 	};
 
@@ -504,21 +509,21 @@ interface IFbTitleFormat;
 		custom(8AFCDA7F-33B7-3120-86A8-754D2C0C0578, "library_block"),
 		uuid(91830eda-b5f2-4061-9923-7880192a2734)
 	] 
-#line 495 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
+#line 502 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
 	interface IDropSourceAction : IDisposable {
-#line 497 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
+#line 504 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
 		[propget] HRESULT  Parsable([out,retval] VARIANT_BOOL *parsable);
 		[propput] HRESULT  Parsable([in]VARIANT_BOOL parsable);
-#line 500 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
+#line 507 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
 		[propget] HRESULT  Playlist([out,retval] int *id);
 		[propput] HRESULT  Playlist([in]int id);
 		[propget] HRESULT  ToSelect([out,retval] VARIANT_BOOL *to_select);
 		[propput] HRESULT  ToSelect([in]VARIANT_BOOL to_select);
-#line 505 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
+#line 512 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
 		HRESULT  ToPlaylist();
 	};
 
-#line 546 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
+#line 553 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
 interface IFbTooltip;
 	[
 		object,
@@ -527,9 +532,9 @@ interface IFbTooltip;
 		custom(8AFCDA7F-33B7-3120-86A8-754D2C0C0578, "library_block"),
 		uuid(81e1f0c0-1dfe-4996-abd9-ba98dff69e4c)
 	] 
-#line 515 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
+#line 522 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
 	interface IFbWindow : IDispatch {
-#line 517 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
+#line 524 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
 		[propget] HRESULT  ID([out,retval] UINT *p);
 		[propget] HRESULT  Width([out,retval] INT *p);
 		[propget] HRESULT  Height([out,retval] INT *p);
@@ -573,9 +578,9 @@ interface IFbTooltip;
 		HRESULT  CreateThemeManager([in]BSTR classid, [out,retval] IThemeManager **pp);
 	};
 
-#line 595 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
+#line 602 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
 interface IWindow;
-#line 608 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
+#line 615 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
 interface IHttpRequest;
 	[
 		object,
@@ -584,9 +589,9 @@ interface IHttpRequest;
 		custom(8AFCDA7F-33B7-3120-86A8-754D2C0C0578, "library_block"),
 		uuid(d53e81cd-0157-4cfe-a618-1F88d48dc0b7)
 	] 
-#line 575 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
+#line 582 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
 	interface IWSHUtils : IDispatch {
-#line 577 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
+#line 584 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
 		HRESULT  CheckComponent([in]BSTR name, [defaultvalue(-1)] VARIANT_BOOL is_dll, [out,retval] VARIANT_BOOL *p);
 		HRESULT  CheckFont([in]BSTR name, [out,retval] VARIANT_BOOL *p);
 		HRESULT  GetAlbumArt([in]BSTR rawpath, [defaultvalue(0)] int art_id, [defaultvalue(-1)] VARIANT_BOOL need_stub, [out,retval] IGdiBitmap **pp);
@@ -603,7 +608,7 @@ interface IHttpRequest;
 		HRESULT  GetSystemMetrics([in]UINT index, [out,retval] int *p);
 		HRESULT  Glob([in]BSTR pattern, [defaultvalue(16)] UINT exc_mask, [defaultvalue(-1)] UINT inc_mask, [out,retval] VARIANT *p);
 		HRESULT  FileTest([in]BSTR path, [in]BSTR mode, [out,retval] VARIANT *p);
-#line 595 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
+#line 602 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
 		HRESULT  GetWND([in]BSTR class_name, [out,retval] IWindow **pp);
 		HRESULT  CreateWND([in]UINT window_id, [out,retval] IWindow **pp);
 		HRESULT  ReleaseCapture();
@@ -629,7 +634,7 @@ interface IHttpRequest;
 		custom(8AFCDA7F-33B7-3120-86A8-754D2C0C0578, "library_block"),
 		uuid(2f691b02-bd48-4dee-ad75-443b4c8ab461)
 	] 
-#line 631 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
+#line 638 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
 	interface IWindow : IDispatch {
 		[propget] HRESULT  _ptr([out] void **pp);
 		[propget] HRESULT  Left([out,retval] INT *p);
@@ -646,7 +651,7 @@ interface IHttpRequest;
 		[propput] HRESULT  Style([in]INT style);
 		[propput] HRESULT  ExStyle([in]INT style);
 		[propput] HRESULT  Caption([in]BSTR title);
-#line 648 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
+#line 655 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
 		HRESULT  GetChild([in]BSTR class_name, [in]UINT index, [out,retval] IWindow **pp);
 		HRESULT  GetAncestor([defaultvalue(1)] UINT flag, [out,retval] IWindow **pp);
 		HRESULT  SetParent([in]IWindow *p);
@@ -676,10 +681,10 @@ interface IHttpRequest;
 		custom(8AFCDA7F-33B7-3120-86A8-754D2C0C0578, "library_block"),
 		uuid(64bbf01c-92c8-407b-880e-dddd87c9abc9)
 	] 
-#line 678 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
+#line 685 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
 	interface IPrivateFontCollection : IDispatch {
 		[propget] HRESULT  FamilyCount([out,retval] INT *p);
-#line 681 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
+#line 688 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
 		HRESULT  AddFont([in]BSTR path, [out,retval] INT *p);
 		HRESULT  GetFont([in]BSTR name, [in]float size, [range(0, 8)] int style, [out,retval] IGdiFont **p);
 	};
@@ -691,9 +696,9 @@ interface IHttpRequest;
 		custom(8AFCDA7F-33B7-3120-86A8-754D2C0C0578, "library_block"),
 		uuid(2c4e7d31-7b07-4e44-9143-7126c786fe73)
 	] 
-#line 692 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
+#line 699 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
 	interface IHttpRequest : IDisposable {
-#line 696 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
+#line 703 "e:\\我的文档\\source_codes\\foo_uie_wsh_panel_mod_plus_v13\\foo_uie_wsh_panel_mod_plus\\foo_uie_wsh_panel_mod\\foo_uie_wsh_panel_mod_plus\\script_interface.h"
 		HRESULT  AddHeader([in]BSTR line);
 		HRESULT  AddPostData([in]BSTR name, [in]BSTR value);
 		HRESULT  Run([in]BSTR url, [out,retval] BSTR *pp);

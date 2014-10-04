@@ -18,15 +18,17 @@ private:
 	CDialogFind * m_dlgfind;
 	CDialogReplace * m_dlgreplace;
 	wsh_panel_window * m_parent;
+	CDialogConf ** m_self;
 	pfc::string8 m_caption;
     unsigned int m_lastFlags;
     pfc::string8 m_lastSearchText;
 
 public:
-	CDialogConf(wsh_panel_window * p_parent) 
+	CDialogConf(wsh_panel_window * p_parent , CDialogConf ** p_self) 
 		: m_parent(p_parent)
 		, m_dlgfind(NULL)
 		, m_dlgreplace(NULL)
+		, m_self(p_self)
         , m_lastSearchText("")
         , m_lastFlags(0)
 	{
@@ -38,6 +40,10 @@ public:
 		m_hWnd = NULL;
 	}
 
+public:
+
+	void OnFinalMessage(HWND hWnd);
+
 	bool MatchShortcuts(unsigned vk);
     void OpenFindDialog();
     void Apply();
@@ -45,12 +51,16 @@ public:
 	void OnResetCurrent();
 	void OnImport();
 	void OnExport();
+    
+	//stolen from SciTE
+	void OnMarginClick(int position, int modifiers);
 
 public:
 	enum { IDD = IDD_DIALOG_CONFIG };
 
 	BEGIN_MSG_MAP(CDialogConf)
 		MSG_WM_INITDIALOG(OnInitDialog)
+		MSG_WM_CONTEXTMENU(OnContextMenu)
 		MSG_WM_NOTIFY(OnNotify)
 		MESSAGE_HANDLER(UWM_KEYDOWN, OnUwmKeyDown)
         MESSAGE_HANDLER(UWM_FINDTEXTCHANGED, OnUwmFindTextChanged)
@@ -76,6 +86,7 @@ public:
 
 public:
 	LRESULT OnInitDialog(HWND hwndFocus, LPARAM lParam);
+	VOID    OnContextMenu(CWindow wnd, CPoint point);    
 	LRESULT OnCloseCmd(WORD wNotifyCode, WORD wID, HWND hWndCtl);
 	LRESULT OnScriptEngineCbnSelEndOk(WORD wNotifyCode, WORD wID, HWND hWndCtl);
 	LRESULT OnTools(WORD wNotifyCode, WORD wID, HWND hWndCtl);

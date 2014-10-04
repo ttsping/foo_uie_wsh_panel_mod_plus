@@ -5,12 +5,13 @@
 #-------------------------------------------------
 
 QT       += core gui
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = ScintillaEditBase
 TEMPLATE = lib
 CONFIG += lib_bundle
 
-VERSION = 3.2.2
+VERSION = 3.5.0
 
 SOURCES += \
     PlatQt.cpp \
@@ -26,17 +27,22 @@ SOURCES += \
     ../../src/RESearch.cxx \
     ../../src/PositionCache.cxx \
     ../../src/PerLine.cxx \
+    ../../src/MarginView.cxx \
     ../../src/LineMarker.cxx \
     ../../src/KeyMap.cxx \
     ../../src/Indicator.cxx \
     ../../src/ExternalLexer.cxx \
+    ../../src/EditView.cxx \
     ../../src/Editor.cxx \
+    ../../src/EditModel.cxx \
     ../../src/Document.cxx \
     ../../src/Decoration.cxx \
     ../../src/ContractionState.cxx \
     ../../src/CharClassify.cxx \
     ../../src/CellBuffer.cxx \
     ../../src/Catalogue.cxx \
+    ../../src/CaseFolder.cxx \
+    ../../src/CaseConvert.cxx \
     ../../src/CallTip.cxx \
     ../../src/AutoComplete.cxx \
     ../../lexlib/WordList.cxx \
@@ -48,6 +54,7 @@ SOURCES += \
     ../../lexlib/LexerBase.cxx \
     ../../lexlib/CharacterSet.cxx \
     ../../lexlib/Accessor.cxx \
+    ../../lexlib/CharacterCategory.cxx \
     ../../lexers/*.cxx
 
 HEADERS  += \
@@ -57,7 +64,7 @@ HEADERS  += \
     ../../src/XPM.h \
     ../../src/ViewStyle.h \
     ../../src/UniConversion.h \
-    ../../src/SVector.h \
+    ../../src/UnicodeFromUTF8.h \
     ../../src/Style.h \
     ../../src/SplitVector.h \
     ../../src/Selection.h \
@@ -79,6 +86,8 @@ HEADERS  += \
     ../../src/CharClassify.h \
     ../../src/CellBuffer.h \
     ../../src/Catalogue.h \
+    ../../src/CaseFolder.h \
+    ../../src/CaseConvert.h \
     ../../src/CallTip.h \
     ../../src/AutoComplete.h \
     ../../include/Scintilla.h \
@@ -96,6 +105,7 @@ HEADERS  += \
     ../../lexlib/LexerBase.h \
     ../../lexlib/LexAccessor.h \
     ../../lexlib/CharacterSet.h \
+    ../../lexlib/CharacterCategory.h \
     ../../lexlib/Accessor.h
 
 OTHER_FILES +=

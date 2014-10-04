@@ -7,6 +7,8 @@
 
 #include <string.h>
 
+#include <algorithm>
+
 #include "Platform.h"
 
 #include "SplitVector.h"
@@ -66,12 +68,16 @@ int ContractionState::LinesDisplayed() const {
 
 int ContractionState::DisplayFromDoc(int lineDoc) const {
 	if (OneToOne()) {
-		return lineDoc;
+		return (lineDoc <= linesInDocument) ? lineDoc : linesInDocument;
 	} else {
 		if (lineDoc > displayLines->Partitions())
 			lineDoc = displayLines->Partitions();
 		return displayLines->PositionFromPartition(lineDoc);
 	}
+}
+
+int ContractionState::DisplayLastFromDoc(int lineDoc) const {
+	return DisplayFromDoc(lineDoc) + GetHeight(lineDoc) - 1;
 }
 
 int ContractionState::DocFromDisplay(int lineDisplay) const {
@@ -144,8 +150,8 @@ bool ContractionState::GetVisible(int lineDoc) const {
 	}
 }
 
-bool ContractionState::SetVisible(int lineDocStart, int lineDocEnd, bool visible_) {
-	if (OneToOne() && visible_) {
+bool ContractionState::SetVisible(int lineDocStart, int lineDocEnd, bool isVisible) {
+	if (OneToOne() && isVisible) {
 		return false;
 	} else {
 		EnsureData();
@@ -153,9 +159,9 @@ bool ContractionState::SetVisible(int lineDocStart, int lineDocEnd, bool visible
 		Check();
 		if ((lineDocStart <= lineDocEnd) && (lineDocStart >= 0) && (lineDocEnd < LinesInDoc())) {
 			for (int line = lineDocStart; line <= lineDocEnd; line++) {
-				if (GetVisible(line) != visible_) {
-					int difference = visible_ ? heights->ValueAt(line) : -heights->ValueAt(line);
-					visible->SetValueAt(line, visible_ ? 1 : 0);
+				if (GetVisible(line) != isVisible) {
+					int difference = isVisible ? heights->ValueAt(line) : -heights->ValueAt(line);
+					visible->SetValueAt(line, isVisible ? 1 : 0);
 					displayLines->InsertText(line, difference);
 					delta += difference;
 				}
@@ -185,13 +191,13 @@ bool ContractionState::GetExpanded(int lineDoc) const {
 	}
 }
 
-bool ContractionState::SetExpanded(int lineDoc, bool expanded_) {
-	if (OneToOne() && expanded_) {
+bool ContractionState::SetExpanded(int lineDoc, bool isExpanded) {
+	if (OneToOne() && isExpanded) {
 		return false;
 	} else {
 		EnsureData();
-		if (expanded_ != (expanded->ValueAt(lineDoc) == 1)) {
-			expanded->SetValueAt(lineDoc, expanded_ ? 1 : 0);
+		if (isExpanded != (expanded->ValueAt(lineDoc) == 1)) {
+			expanded->SetValueAt(lineDoc, isExpanded ? 1 : 0);
 			Check();
 			return true;
 		} else {

@@ -14,6 +14,7 @@ using namespace pfc::stringcvt;
 LRESULT CDialogConf::OnInitDialog(HWND hwndFocus, LPARAM lParam)
 {
 	//g_config_dlg_mgr.add_window(m_hWnd);
+	modeless_dialog_manager::g_add(m_hWnd);
 
 	// Get caption text
 	uGetWindowText(m_hWnd, m_caption);
@@ -89,7 +90,7 @@ LRESULT CDialogConf::OnCloseCmd(WORD wNotifyCode, WORD wID, HWND hWndCtl)
 	{
 	case IDOK:
 		Apply();
-		EndDialog(IDOK);
+		DestroyWindow();
 		break;
 
 	case IDAPPLY:
@@ -106,7 +107,7 @@ LRESULT CDialogConf::OnCloseCmd(WORD wNotifyCode, WORD wID, HWND hWndCtl)
 			{
 			case IDYES:
 				Apply();
-				EndDialog(IDOK);
+				DestroyWindow();
 				break;
 
 			case IDCANCEL:
@@ -114,7 +115,7 @@ LRESULT CDialogConf::OnCloseCmd(WORD wNotifyCode, WORD wID, HWND hWndCtl)
 			}
 		}
 
-		EndDialog(IDCANCEL);
+		DestroyWindow();
 	}
 	
 	return 0;
@@ -278,6 +279,13 @@ LRESULT CDialogConf::OnNotify(int idCtrl, LPNMHDR pnmh)
 	case SCN_SAVEPOINTREACHED:
 		uSetWindowText(m_hWnd, m_caption);
 		break;
+
+		// toggle fold
+	case SCN_MARGINCLICK:
+		{
+			OnMarginClick(notification->position,notification->modifiers);
+		}
+		break;
 	}
 
 	SetMsgHandled(FALSE);
@@ -398,6 +406,8 @@ bool CDialogConf::FindResult(HWND hWnd, HWND hWndEdit, int pos, const char *whic
     if (pos != -1)
     {
         // Scroll to view
+		int line = ::SendMessage(hWndEdit,SCI_LINEFROMPOSITION, pos, 0);
+		::SendMessage(hWndEdit, SCI_ENSUREVISIBLEENFORCEPOLICY, line, 0);
         ::SendMessage(hWndEdit, SCI_SCROLLCARET, 0, 0);
         return true;
     }
@@ -421,3 +431,99 @@ void CDialogConf::OpenFindDialog()
     m_dlgfind->ShowWindow(SW_SHOW);
     m_dlgfind->SetFocus();
 }
+
+void CDialogConf::OnFinalMessage( HWND hWnd )
+{
+	modeless_dialog_manager::g_remove(m_hWnd);
+	(*m_self) = NULL;
+	delete this;
+}
+
+void CDialogConf::OnMarginClick( int position, int modifiers )
+{
+	int lineClick = m_editorctrl.LineFromPosition(position);
+	m_editorctrl.ToggleFold(lineClick);
+}
+
+VOID CDialogConf::OnContextMenu( CWindow wnd, CPoint point )
+{
+	enum
+	{
+		kCmdUndo = 1 ,
+		kCmdRedo ,
+		kCmdCut ,
+		kCmdCopy ,
+		kCmdPaste ,
+		kCmdDelete ,
+		kCmdSelectAll ,
+		kCmdOutliningToggle ,
+		kCmdOutliningToggleAll ,
+
+	};
+
+	int cmd = 0;
+	const int flag_normal = MF_STRING;
+	const int flag_separator = MF_SEPARATOR;
+	const int flag_disable = flag_normal | MF_GRAYED | MF_DISABLED;
+	const int flag_submenu = flag_normal | MF_POPUP;
+
+	CMenu menu;
+	menu.CreatePopupMenu();
+
+	bool writable = !m_editorctrl.GetReadOnly();
+	AppendMenu(menu,(writable && m_editorctrl.CanUndo() ? flag_normal : flag_disable), kCmdUndo, _T("Undo"));
+	AppendMenu(menu,(writable && m_editorctrl.CanRedo() ? flag_normal : flag_disable), kCmdRedo, _T("Redo"));
+	AppendMenu(menu,flag_separator,NULL,NULL);
+	AppendMenu(menu,(writable && !m_editorctrl.GetSelectionEmpty() ? flag_normal : flag_disable),kCmdCut,_T("Cut"));
+	AppendMenu(menu,(!m_editorctrl.GetSelectionEmpty() ? flag_normal : flag_disable),kCmdCopy,_T("Copy"));
+	AppendMenu(menu,(writable && m_editorctrl.CanPaste() ? flag_normal : flag_disable),kCmdPaste,_T("Paste"));
+	AppendMenu(menu,(writable && !m_editorctrl.GetSelectionEmpty() ? flag_normal : flag_disable),kCmdDelete,_T("Delete"));
+	AppendMenu(menu,flag_separator,NULL,NULL);
+	AppendMenu(menu,flag_normal,kCmdSelectAll,_T("Select All"));
+	AppendMenu(menu,flag_separator,NULL,NULL);
+	CMenu outline_menu;
+	outline_menu.CreateMenu();
+	AppendMenu(outline_menu,flag_normal,kCmdOutliningToggle,_T("Toggle Outlining Expansion"));
+	AppendMenu(outline_menu,flag_normal,kCmdOutliningToggleAll,_T("Toggle All Outlining"));
+	AppendMenu(menu,flag_submenu,(UINT_PTR)outline_menu.m_hMenu,_T("Outlining"));
+
+
+
+	cmd = menu.TrackPopupMenu(TPM_RIGHTBUTTON | TPM_NONOTIFY | TPM_RETURNCMD,point.x,point.y,m_hWnd);
+
+	switch(cmd){
+	case kCmdUndo:
+		m_editorctrl.Undo();
+		break;
+	case kCmdRedo:
+		m_editorctrl.Redo();
+		break;
+	case kCmdCut:
+		m_editorctrl.Cut();
+		break;
+	case kCmdCopy:
+		m_editorctrl.Copy();
+		break;
+	case kCmdPaste:
+		m_editorctrl.Paste();
+		break;
+	case kCmdDelete:
+		m_editorctrl.Clear();
+		break;
+	case kCmdSelectAll:
+		m_editorctrl.SelectAll();
+		break;
+	case kCmdOutliningToggle:
+		{
+			CPoint temp(point);
+			::ScreenToClient(m_editorctrl,&temp);
+			OnMarginClick(m_editorctrl.PositionFromPoint(temp.x,temp.y),0);
+		}
+		break;
+	case kCmdOutliningToggleAll:
+		m_editorctrl.FoldAll(SC_FOLDACTION_TOGGLE);
+		break;
+	}
+
+}
+

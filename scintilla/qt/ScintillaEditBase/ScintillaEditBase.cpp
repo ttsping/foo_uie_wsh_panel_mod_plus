@@ -13,7 +13,9 @@
 #include "PlatQt.h"
 
 #include <QApplication>
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 #include <QInputContext>
+#endif
 #include <QPainter>
 #include <QScrollBar>
 #include <QTextFormat>
@@ -39,7 +41,7 @@ ScintillaEditBase::ScintillaEditBase(QWidget *parent)
 	setFrameStyle(QFrame::NoFrame);
 	setFocusPolicy(Qt::StrongFocus);
 	setAttribute(Qt::WA_StaticContents);
-	setAttribute(Qt::WA_OpaquePaintEvent);
+	viewport()->setAttribute(Qt::WA_OpaquePaintEvent);
 	setAttribute(Qt::WA_KeyCompression);
 	setAttribute(Qt::WA_InputMethodEnabled);
 
@@ -108,6 +110,9 @@ bool ScintillaEditBase::event(QEvent *event)
 		// Circumvent the tab focus convention.
 		keyPressEvent(static_cast<QKeyEvent *>(event));
 		result = event->isAccepted();
+	} else if (event->type() == QEvent::Hide) {
+		setMouseTracking(false);
+		result = QAbstractScrollArea::event(event);
 	} else {
 		result = QAbstractScrollArea::event(event);
 	}
@@ -128,7 +133,7 @@ void ScintillaEditBase::wheelEvent(QWheelEvent *event)
 		else
 			QAbstractScrollArea::wheelEvent(event);
 	} else {
-		if (event->modifiers() & Qt::ControlModifier) {
+		if (QApplication::keyboardModifiers() & Qt::ControlModifier) {
 			// Zoom! We play with the font sizes in the styles.
 			// Number of steps/line is ignored, we just care if sizing up or down
 			if (event->delta() > 0) {
@@ -173,7 +178,7 @@ void ScintillaEditBase::keyPressEvent(QKeyEvent *event)
 {
 	// All keystrokes containing the meta modifier are
 	// assumed to be shortcuts not handled by scintilla.
-	if (event->modifiers() & Qt::MetaModifier) {
+	if (QApplication::keyboardModifiers() & Qt::MetaModifier) {
 		QAbstractScrollArea::keyPressEvent(event);
 		emit keyPressed(event);
 		return;
@@ -206,9 +211,9 @@ void ScintillaEditBase::keyPressEvent(QKeyEvent *event)
 		default:                    key = event->key(); break;
 	}
 
-	bool shift = event->modifiers() & Qt::ShiftModifier;
-	bool ctrl  = event->modifiers() & Qt::ControlModifier;
-	bool alt   = event->modifiers() & Qt::AltModifier;
+	bool shift = QApplication::keyboardModifiers() & Qt::ShiftModifier;
+	bool ctrl  = QApplication::keyboardModifiers() & Qt::ControlModifier;
+	bool alt   = QApplication::keyboardModifiers() & Qt::AltModifier;
 
 	bool consumed = false;
 	bool added = sqt->KeyDown(key, shift, ctrl, alt, &consumed) != 0;
@@ -239,6 +244,7 @@ void ScintillaEditBase::keyPressEvent(QKeyEvent *event)
 	emit keyPressed(event);
 }
 
+#ifdef Q_WS_X11
 static int modifierTranslated(int sciModifier)
 {
 	switch (sciModifier) {
@@ -254,6 +260,7 @@ static int modifierTranslated(int sciModifier)
 			return 0;
 	}
 }
+#endif
 
 void ScintillaEditBase::mousePressEvent(QMouseEvent *event)
 {
@@ -274,14 +281,14 @@ void ScintillaEditBase::mousePressEvent(QMouseEvent *event)
 	bool button = event->button() == Qt::LeftButton;
 
 	if (button) {
-		bool shift = event->modifiers() & Qt::ShiftModifier;
-		bool ctrl  = event->modifiers() & Qt::ControlModifier;
+		bool shift = QApplication::keyboardModifiers() & Qt::ShiftModifier;
+		bool ctrl  = QApplication::keyboardModifiers() & Qt::ControlModifier;
 #ifdef Q_WS_X11
 		// On X allow choice of rectangular modifier since most window
 		// managers grab alt + click for moving windows.
-		bool alt   = event->modifiers() & modifierTranslated(sqt->rectangularSelectionModifier);
+		bool alt   = QApplication::keyboardModifiers() & modifierTranslated(sqt->rectangularSelectionModifier);
 #else
-		bool alt   = event->modifiers() & Qt::AltModifier;
+		bool alt   = QApplication::keyboardModifiers() & Qt::AltModifier;
 #endif
 
 		sqt->ButtonDown(pos, time.elapsed(), shift, ctrl, alt);
@@ -291,28 +298,47 @@ void ScintillaEditBase::mousePressEvent(QMouseEvent *event)
 void ScintillaEditBase::mouseReleaseEvent(QMouseEvent *event)
 {
 	Point point = PointFromQPoint(event->pos());
-	bool ctrl  = event->modifiers() & Qt::ControlModifier;
+	bool ctrl  = QApplication::keyboardModifiers() & Qt::ControlModifier;
 	if (event->button() == Qt::LeftButton)
 		sqt->ButtonUp(point, time.elapsed(), ctrl);
 
 	int pos = send(SCI_POSITIONFROMPOINT, point.x, point.y);
 	int line = send(SCI_LINEFROMPOSITION, pos);
-	int modifiers = event->modifiers();
+	int modifiers = QApplication::keyboardModifiers();
 
 	emit textAreaClicked(line, modifiers);
 	emit buttonReleased(event);
 }
 
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 void ScintillaEditBase::mouseDoubleClickEvent(QMouseEvent *event)
 {
 	// Scintilla does its own double-click detection.
 	mousePressEvent(event);
 }
+#else
+void ScintillaEditBase::mouseDoubleClickEvent(QMouseEvent *)
+{
+}
+#endif
 
 void ScintillaEditBase::mouseMoveEvent(QMouseEvent *event)
 {
 	Point pos = PointFromQPoint(event->pos());
-	sqt->ButtonMove(pos);
+
+	bool shift = QApplication::keyboardModifiers() & Qt::ShiftModifier;
+	bool ctrl  = QApplication::keyboardModifiers() & Qt::ControlModifier;
+#ifdef Q_WS_X11
+	// On X allow choice of rectangular modifier since most window
+	// managers grab alt + click for moving windows.
+	bool alt   = QApplication::keyboardModifiers() & modifierTranslated(sqt->rectangularSelectionModifier);
+#else
+	bool alt   = QApplication::keyboardModifiers() & Qt::AltModifier;
+#endif
+
+	int modifiers = (shift ? SCI_SHIFT : 0) | (ctrl ? SCI_CTRL : 0) | (alt ? SCI_ALT : 0);
+
+	sqt->ButtonMoveWithModifiers(pos, modifiers);
 }
 
 void ScintillaEditBase::contextMenuEvent(QContextMenuEvent *event)
@@ -385,7 +411,7 @@ void ScintillaEditBase::inputMethodEvent(QInputMethodEvent *event)
 		// Replace the selection with the commit string.
 		QByteArray commitBytes = sqt->BytesForDocument(event->commitString());
 		char *commitData = commitBytes.data();
-		sqt->AddCharUTF(commitData, strlen(commitData));
+		sqt->AddCharUTF(commitData, static_cast<unsigned int>(strlen(commitData)));
 	}
 
 	// Select the previous preedit string.
@@ -399,7 +425,7 @@ void ScintillaEditBase::inputMethodEvent(QInputMethodEvent *event)
 	bool recording = sqt->recordingMacro;
 	sqt->recordingMacro = false;
 	send(SCI_SETUNDOCOLLECTION, false);
-	sqt->AddCharUTF(data, strlen(data));
+	sqt->AddCharUTF(data, static_cast<unsigned int>(strlen(data)));
 	send(SCI_SETUNDOCOLLECTION, true);
 	sqt->recordingMacro = recording;
 	sqt->SetSelection(pos, pos);
@@ -622,6 +648,10 @@ void ScintillaEditBase::notifyParent(SCNotification scn)
 
 		case SCN_AUTOCSELECTION:
 			emit autoCompleteSelection(scn.lParam, QString::fromUtf8(scn.text));
+			break;
+
+		case SCN_AUTOCCANCELLED:
+			emit autoCompleteCancelled();
 			break;
 
 		default:

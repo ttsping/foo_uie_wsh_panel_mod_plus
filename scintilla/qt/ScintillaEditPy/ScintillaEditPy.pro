@@ -1,5 +1,6 @@
 TEMPLATE = lib
 QT += core gui
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = ScintillaEditPy
 
@@ -31,9 +32,12 @@ INCLUDEPATH += $$PYSIDE_INCLUDES/QtCore
 INCLUDEPATH += $$PYSIDE_INCLUDES/QtGui
 
 unix:!mac {
-	LIBS += -ldl
 	LIBS += `pkg-config pyside --libs`
+}
+unix:linux-* {
+	# gcc on freebsd 9.2, at least, doesn't support -Wno-empty-body
 	QMAKE_CXXFLAGS += -Wno-unused-parameter -Wno-empty-body
+	LIBS += -ldl
 }
 
 macx {
@@ -42,7 +46,7 @@ macx {
 	# QMAKE_CXXFLAGS = -arch i386 -arch x86_64
 	# QMAKE_LFLAGS = -arch i386 -arch x86_64
 	LIBS += -L$$PY_LIBDIR -lpython$$PY_VERSION_SUFFIX
-	LIBS += -L$$PYSIDE_LIB
+	LIBS += -L$$PYSIDE_LIB -L$$SHIBOKEN_LIB
 	debug {
 		LIBS += -lshiboken-python$$PY_VERSION_SUFFIX-dbg
 		LIBS += -lpyside-python$$PY_VERSION_SUFFIX-dbg
@@ -62,7 +66,7 @@ win32 {
 		LIBS += -lQtCore
 	}
 	LIBS += -L$$PY_PREFIX/libs # Note python lib is pulled in via a #pragma
-	LIBS += -L$$PYSIDE_LIB
+	LIBS += -L$$PYSIDE_LIB -L$$SHIBOKEN_LIB
 	# PySide uses x.y suffix on Windows even though Python uses xy
 	DebugBuild {
 		LIBS += -lshiboken-python$${PY_VERSION}_d

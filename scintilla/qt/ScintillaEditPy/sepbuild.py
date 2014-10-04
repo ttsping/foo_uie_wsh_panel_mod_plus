@@ -11,6 +11,11 @@ import sys
 sys.path.append(os.path.join("..", "ScintillaEdit"))
 import WidgetGen
 
+scintillaDirectory = "../.."
+scintillaScriptsDirectory = os.path.join(scintillaDirectory, "scripts")
+sys.path.append(scintillaScriptsDirectory)
+from FileGenerator import GenerateFile
+
 # Decide up front which platform, treat anything other than Windows or OS X as Linux
 PLAT_WINDOWS = platform.system() == "Windows"
 PLAT_DARWIN = platform.system() == "Darwin"
@@ -31,7 +36,10 @@ def IsFileNewer(name1, name2):
 	return (mod_time1 > mod_time2)
 
 def textFromRun(args):
-	(stdoutdata, stderrdata) = subprocess.Popen(args, shell=True, stdout=subprocess.PIPE).communicate()
+	proc = subprocess.Popen(args, shell=isinstance(args, str), stdout=subprocess.PIPE)
+	(stdoutdata, stderrdata) = proc.communicate()
+	if proc.returncode:
+		raise OSError(proc.returncode)
 	return stdoutdata
 
 def runProgram(args, exitOnFailure):
@@ -56,8 +64,7 @@ def usage():
 	print("-u --underscore-names  use method_names consistent with GTK+ standards")
 
 modifyFunctionElement = """		<modify-function signature="%s">%s
-		</modify-function>
-"""
+		</modify-function>"""
 
 injectCode = """
 			<inject-code class="target" position="beginning">%s
@@ -72,9 +79,13 @@ injectCheckN = """
 def methodSignature(name, v, options):
 	argTypes = ""
 	p1Type = WidgetGen.cppAlias(v["Param1Type"])
+	if p1Type == "int":
+		p1Type = "sptr_t"
 	if p1Type:
 		argTypes = argTypes + p1Type
 	p2Type = WidgetGen.cppAlias(v["Param2Type"])
+	if p2Type == "int":
+		p2Type = "sptr_t"
 	if p2Type and v["Param2Type"] != "stringresult":
 		if p1Type:
 			argTypes = argTypes + ", "
@@ -83,7 +94,8 @@ def methodSignature(name, v, options):
 	constDeclarator = " const" if v["FeatureType"] == "get" else ""
 	return methodName + "(" + argTypes + ")" + constDeclarator
 
-def printTypeSystemFile(f,out, options):
+def printTypeSystemFile(f, options):
+	out = []
 	for name in f.order:
 		v = f.features[name]
 		if v["Category"] != "Deprecated":
@@ -99,9 +111,10 @@ def printTypeSystemFile(f,out, options):
 						checks = checks + (injectCheckN % 1)
 				if checks:
 					inject = injectCode % checks
-					out.write(modifyFunctionElement % (methodSignature(name, v, options), inject))
+					out.append(modifyFunctionElement % (methodSignature(name, v, options), inject))
 				#if v["Param1Type"] == "string":
-				#	out.write("<string-xml>" + name + "</string-xml>\n")
+				#	out.append("<string-xml>" + name + "</string-xml>\n")
+	return out
 
 def doubleBackSlashes(s):
 	# Quote backslashes so qmake does not produce warnings
@@ -161,22 +174,25 @@ class SepBuilder:
 	def _setPySideBase(self, base):
 		
 		self.PySideBase = base
-		if PLAT_LINUX:
-			self.PySideTypeSystem = textFromRun("pkg-config --variable=typesystemdir pyside").rstrip()
-			self.PySideIncludeBase = textFromRun("pkg-config --variable=includedir pyside").rstrip()
-			self.ShibokenIncludeBase = textFromRun("pkg-config --variable=includedir shiboken").rstrip()
-		else:
-			self.PySideTypeSystem = os.path.join(self.PySideBase, "share", "PySide", "typesystems")
-			self.ShibokenIncludeBase = os.path.join(self.PySideBase, "include", "shiboken")
-			self.PySideIncludeBase = os.path.join(self.PySideBase, "include", "PySide")
-
+		def _try_pkgconfig(var, package, *relpath):
+			try:
+				return textFromRun(["pkg-config", "--variable=" + var, package]).rstrip()
+			except OSError:
+				return os.path.join(self.PySideBase, *relpath)
+		self.PySideTypeSystem = _try_pkgconfig("typesystemdir", "pyside",
+		                                       "share", "PySide", "typesystems")
+		self.PySideIncludeBase = _try_pkgconfig("includedir", "pyside",
+		                                        "include", "PySide")
+		self.ShibokenIncludeBase = _try_pkgconfig("includedir", "shiboken",
+		                                          "include", "shiboken")
 		self.PySideIncludes = [
 			self.ShibokenIncludeBase,
 			self.PySideIncludeBase,
 			os.path.join(self.PySideIncludeBase, "QtCore"),
 			os.path.join(self.PySideIncludeBase, "QtGui")]
 
-		self.PySideLibDir = os.path.join(self.PySideBase, "lib")
+		self.PySideLibDir = _try_pkgconfig("libdir", "pyside", "lib")
+		self.ShibokenLibDir = _try_pkgconfig("libdir", "shiboken", "lib")
 		self.AllIncludes = os.pathsep.join(self.QtIncludes + self.ScintillaEditIncludes + self.PySideIncludes)
 
 		self.ShibokenGenerator = "shiboken"
@@ -193,7 +209,8 @@ class SepBuilder:
 		f = WidgetGen.readInterface(False)
 		os.chdir(os.path.join("..", "ScintillaEditPy"))
 		options = {"qtStyle": self.qtStyleInterface}
-		WidgetGen.Generate("typesystem_ScintillaEdit.xml.template", "typesystem_ScintillaEdit.xml", printTypeSystemFile, f, options)
+		GenerateFile("typesystem_ScintillaEdit.xml.template", "typesystem_ScintillaEdit.xml", 
+			"<!-- ", True, printTypeSystemFile(f, options))
 
 	def runGenerator(self):
 		generatorrunner = "shiboken"
@@ -233,6 +250,7 @@ class SepBuilder:
 			f.write("PYSIDE_INCLUDES=" + doubleBackSlashes(self.PySideIncludeBase) + "\n")
 			f.write("PYSIDE_LIB=" + doubleBackSlashes(self.PySideLibDir) + "\n")
 			f.write("SHIBOKEN_INCLUDES=" + doubleBackSlashes(self.ShibokenIncludeBase) + "\n")
+			f.write("SHIBOKEN_LIB=" + doubleBackSlashes(self.ShibokenLibDir) + "\n")
 			if self.DebugBuild:
 				f.write("CONFIG += debug\n")
 			else:

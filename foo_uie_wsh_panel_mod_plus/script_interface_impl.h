@@ -484,6 +484,12 @@ public:
 	STDMETHODIMP IsAutoPlaylist(UINT idx, VARIANT_BOOL * p);
 	STDMETHODIMP CreateAutoPlaylist(UINT idx, BSTR name, BSTR query, BSTR sort, UINT flags, UINT * p);
 	STDMETHODIMP ShowAutoPlaylistUI(UINT idx, VARIANT_BOOL * p);
+
+
+	STDMETHODIMP IsMediaLibraryEnabled(VARIANT_BOOL * p);
+	STDMETHODIMP GetAllItemsInMediaLibrary(IFbMetadbHandleList ** pp);
+	STDMETHODIMP QueryMulti(IFbMetadbHandleList * items , BSTR query , IFbMetadbHandleList ** pp);
+	STDMETHODIMP GetMainMenuCommandStatus(BSTR command , UINT *p);
 };
 
 class MenuObj : public IDisposableImpl4<IMenuObj>

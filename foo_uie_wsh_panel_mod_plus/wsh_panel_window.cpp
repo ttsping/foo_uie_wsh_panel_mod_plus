@@ -11,7 +11,8 @@
 wsh_panel_window::wsh_panel_window() :
     m_script_host(new ScriptHost(this)), 
     m_is_mouse_tracked(false),
-    m_is_droptarget_registered(false)
+    m_is_droptarget_registered(false),
+	m_config_dialog_ptr(NULL)
 {
 
 }
@@ -180,12 +181,20 @@ ui_helpers::container_window::class_data & wsh_panel_window::get_class_data() co
 
 bool wsh_panel_window::show_configure_popup(HWND parent)
 {
-    modal_dialog_scope scope;
-    if (!scope.can_create()) return false;
-    scope.initialize(parent);
+    //modal_dialog_scope scope;
+    //if (!scope.can_create()) return false;
+    //scope.initialize(parent);
 
-    CDialogConf dlg(this);
-    return (dlg.DoModal(parent) == IDOK);
+    //CDialogConf dlg(this);
+    //return (dlg.DoModal(parent) == IDOK);
+	if (!m_config_dialog_ptr){
+		m_config_dialog_ptr = new CDialogConf(this,&m_config_dialog_ptr);
+		m_config_dialog_ptr->Create(m_hwnd);
+	}
+
+	m_config_dialog_ptr->ShowWindow(SW_NORMAL);
+	m_config_dialog_ptr->SetFocus();
+	return true;
 }
 
 bool wsh_panel_window::show_property_popup(HWND parent)
@@ -1015,6 +1024,8 @@ void wsh_panel_window::build_context_menu(HMENU menu, int x, int y, int id_base)
 {
     ::AppendMenu(menu, MF_STRING, id_base + 1, _T("&Properties"));
     ::AppendMenu(menu, MF_STRING, id_base + 2, _T("&Configure..."));
+	::AppendMenu(menu, MF_SEPARATOR , NULL , NULL);
+	::AppendMenu(menu, MF_STRING, id_base + 3, _T("Reload &Script"));
 }
 
 void wsh_panel_window::execute_context_menu_command(int id, int id_base)
@@ -1024,10 +1035,12 @@ void wsh_panel_window::execute_context_menu_command(int id, int id_base)
     case 1:
         show_property_popup(m_hwnd);
         break;
-
     case 2:
         show_configure_popup(m_hwnd);			
         break;
+	case 3:
+		update_script();
+		break;
     }
 }
 

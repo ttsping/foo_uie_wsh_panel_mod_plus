@@ -27,12 +27,14 @@ private:
         HWND wnd_;
     };
 
-    CComPtr<IDropTargetImpl>   m_drop_target;
+	CDialogConf  *             m_config_dialog_ptr;
+
+	CComPtr<IDropTargetImpl>   m_drop_target;
     // Scripting
-    IGdiGraphicsPtr  m_gr_wrap;
-    ScriptHost      *m_script_host;
-    bool             m_is_mouse_tracked;
-    bool	         m_is_droptarget_registered;
+    IGdiGraphicsPtr            m_gr_wrap;
+    ScriptHost      *          m_script_host;
+    bool                       m_is_mouse_tracked;
+    bool	                   m_is_droptarget_registered;
 
 public:
     wsh_panel_window();

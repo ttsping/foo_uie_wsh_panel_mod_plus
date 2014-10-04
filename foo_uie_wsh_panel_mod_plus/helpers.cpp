@@ -226,6 +226,121 @@ namespace helpers
 		return false;
 	}
 
+	static t_uint32 get_mainmenu_command_flags_recur_v2(mainmenu_node::ptr node, pfc::string8_fast path, const char * p_name, t_size p_name_len)
+	{
+		pfc::string8_fast text;
+		t_uint32 flags = 0;
+		t_uint32 type = node->get_type();
+
+		if (type != mainmenu_node::type_separator)
+		{
+			node->get_display(text, flags);
+			if (!text.is_empty())
+				path.add_string(text);
+		}
+
+		switch (type) 
+		{
+		case mainmenu_node::type_command:
+			{
+				if (match_menu_command(path, p_name, p_name_len)) 
+				{
+					return flags;
+				}
+			}
+			break;
+
+		case mainmenu_node::type_group:
+			{
+				if (!text.is_empty())
+					path.add_char('/');
+
+				for(t_size i = 0; i < node->get_children_count(); ++i) 
+				{
+					mainmenu_node::ptr child = node->get_child(i);
+
+					if (flags = execute_mainmenu_command_recur_v2(child, path, p_name, p_name_len)) 
+						return flags;
+				}
+			}
+			break;
+		}
+
+		return flags;
+	}
+
+	t_uint32 get_mainmenu_command_flags_by_name( const char * p_name)
+	{
+		t_uint32 ret = 0;
+		// First generate a map of all mainmenu_group
+		pfc::map_t<GUID, mainmenu_group::ptr> group_guid_text_map;
+		build_mainmenu_group_map(group_guid_text_map);
+
+		// Second, generate a list of all mainmenu commands
+		service_enum_t<mainmenu_commands> e;
+		service_ptr_t<mainmenu_commands> ptr;
+		t_size name_len = strlen(p_name);
+
+		while (e.next(ptr))
+		{
+			for (t_uint32 idx = 0; idx < ptr->get_command_count(); ++idx)
+			{
+				GUID group_guid = ptr->get_parent();
+				pfc::string8_fast path;
+
+				while (group_guid_text_map.have_item(group_guid))
+				{
+					mainmenu_group::ptr group_ptr = group_guid_text_map[group_guid];
+					mainmenu_group_popup::ptr group_popup_ptr;
+
+					if (group_ptr->service_query_t(group_popup_ptr))
+					{
+						pfc::string8_fast temp;
+						group_popup_ptr->get_display_string(temp);
+
+						if (!temp.is_empty())
+						{
+							temp.add_char('/');
+							temp.add_string(path);
+							path = temp;
+						}
+					}
+
+					group_guid = group_ptr->get_parent();
+				}
+
+				// for new fb2k1.0 commands
+				mainmenu_commands_v2::ptr v2_ptr;
+
+				if (ptr->service_query_t(v2_ptr))
+				{
+					if (v2_ptr->is_command_dynamic(idx))
+					{
+						mainmenu_node::ptr node = v2_ptr->dynamic_instantiate(idx);
+
+						if (ret = get_mainmenu_command_flags_recur_v2(node, path, p_name, name_len))
+							return ret;
+						else
+							continue;
+					}
+				}
+
+				// old commands
+				pfc::string8_fast command;
+				ptr->get_name(idx, command);
+				path.add_string(command);
+
+				if (match_menu_command(path, p_name, name_len))
+				{
+					ptr->get_display(idx,command,ret);
+					return ret;
+				}
+			}
+		}
+
+		return ret;
+	}
+
     unsigned detect_charset(const char * fileName)
     {
         _COM_SMARTPTR_TYPEDEF(IMultiLanguage2, IID_IMultiLanguage2);
