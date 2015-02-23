@@ -219,3 +219,22 @@ class my_playback_queue_callback : public playback_queue_callback
 public:
     void on_changed(t_change_origin p_origin);
 };
+
+class my_library_callback : public library_callback
+{
+public:
+	enum t_item_action
+	{
+		t_item_added = 0 ,
+		t_item_removed ,
+		t_item_modified ,
+	};
+
+public:
+	virtual void on_items_added(const pfc::list_base_const_t<metadb_handle_ptr> & p_data) { on_items_changed(t_item_added); }
+	virtual void on_items_removed(const pfc::list_base_const_t<metadb_handle_ptr> & p_data) { on_items_changed(t_item_removed); }
+	virtual void on_items_modified(const pfc::list_base_const_t<metadb_handle_ptr> & p_data) { on_items_changed(t_item_modified); }
+
+private:
+	void on_items_changed(t_item_action p_action);
+};

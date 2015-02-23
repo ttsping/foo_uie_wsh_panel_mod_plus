@@ -186,6 +186,7 @@ copy "$(SolutionDir)extras\*.api" "C:\Program Files\Foobar2000\components"</Comm
     <ClInclude Include="host.h" />
     <ClInclude Include="IDropTargetImpl.h" />
     <ClInclude Include="host_droptarget.h" />
+    <ClInclude Include="splitter_window.h" />
     <ClInclude Include="wsh_panel_window.h" />
     <ClInclude Include="wsh_panel_window_dui.h" />
     <ClInclude Include="wsh_panel_window_cui.h" />

@@ -61,6 +61,7 @@ struct CallbackIds
         on_metadb_changed,
         on_selection_changed,
         on_playback_queue_changed,
+		on_library_changed,
         on_script_unload,
 		on_http_run_done,
 		on_process_locations_done,

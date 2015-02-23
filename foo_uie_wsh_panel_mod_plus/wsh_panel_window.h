@@ -127,6 +127,9 @@ private:
     // playback queue callback
     void on_playback_queue_changed(WPARAM wp);
 
+	// library callback
+	void on_library_changed(WPARAM wp);
+
 	void on_http_run_done(LPARAM wp);
 	void on_process_locations_done(WPARAM wp);
 

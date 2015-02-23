@@ -42,6 +42,7 @@
 #include <atlwin.h>
 #include <atlframe.h>
 #include <atldlgs.h>
+#include <atlsplit.h>
 #include <atlctrls.h>
 #include <atlctrlx.h>
 #include <atlddx.h>

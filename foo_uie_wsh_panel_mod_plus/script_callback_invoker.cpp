@@ -70,6 +70,7 @@ static const IDToNameEntry g_idToNames[] =
     DEFINE_ID_NAME_MAP_ENTRY(on_metadb_changed),
     DEFINE_ID_NAME_MAP_ENTRY(on_selection_changed),
     DEFINE_ID_NAME_MAP_ENTRY(on_playback_queue_changed),
+	DEFINE_ID_NAME_MAP_ENTRY(on_library_changed),
 	DEFINE_ID_NAME_MAP_ENTRY(on_http_run_done),
 	DEFINE_ID_NAME_MAP_ENTRY(on_process_locations_done),
     DEFINE_ID_NAME_MAP_ENTRY(on_script_unload),

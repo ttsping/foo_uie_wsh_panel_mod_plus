@@ -181,18 +181,12 @@ ui_helpers::container_window::class_data & wsh_panel_window::get_class_data() co
 
 bool wsh_panel_window::show_configure_popup(HWND parent)
 {
-    //modal_dialog_scope scope;
-    //if (!scope.can_create()) return false;
-    //scope.initialize(parent);
-
-    //CDialogConf dlg(this);
-    //return (dlg.DoModal(parent) == IDOK);
 	if (!m_config_dialog_ptr){
 		m_config_dialog_ptr = new CDialogConf(this,&m_config_dialog_ptr);
-		m_config_dialog_ptr->Create(m_hwnd);
+		m_config_dialog_ptr->Create(NULL);
 	}
 
-	m_config_dialog_ptr->ShowWindow(SW_NORMAL);
+	m_config_dialog_ptr->ShowWindow(SW_SHOW);
 	m_config_dialog_ptr->SetFocus();
 	return true;
 }
@@ -224,7 +218,7 @@ LRESULT wsh_panel_window::on_message(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
             create_context();
             // Interfaces
             m_gr_wrap.Attach(new com_object_impl_t<GdiGraphics>(), false);
-            panel_manager::instance().add_window(m_hwnd);
+			panel_manager::instance().add_window(m_hwnd);
             if (get_delay_load())
                 delay_loader::g_enqueue(new delay_script_init_action(m_hwnd));
             else
@@ -594,6 +588,10 @@ LRESULT wsh_panel_window::on_message(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
     case CALLBACK_UWM_ON_PLAYBACK_QUEUE_CHANGED:
         on_playback_queue_changed(wp);
         return 0;
+
+	case CALLBACK_UWM_ON_LIBRARY_CHANGED:
+		on_library_changed(wp);
+		return 0;
 
 	case CALLBACK_UWM_HTTPRUNASYNCDONE:
 		on_http_run_done(lp);
@@ -1445,6 +1443,17 @@ void wsh_panel_window::on_playback_queue_changed(WPARAM wp)
     args[0].lVal = wp;
     script_invoke_v(CallbackIds::on_playback_queue_changed, args, _countof(args));
 }
+
+void wsh_panel_window::on_library_changed( WPARAM wp )
+{
+	TRACK_FUNCTION();
+
+	VARIANTARG args[1];
+	args[0].vt = VT_I4;
+	args[0].lVal = wp;
+	script_invoke_v(CallbackIds::on_library_changed, args, _countof(args));
+}
+
 
 void wsh_panel_window::on_http_run_done( LPARAM lp )
 {

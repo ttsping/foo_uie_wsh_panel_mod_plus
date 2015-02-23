@@ -85,6 +85,7 @@ __interface IGdiBitmap: IGdiObj
 	STDMETHOD(Resize)(UINT w, UINT h, [range(Gdiplus::InterpolationModeInvalid, Gdiplus::InterpolationModeHighQualityBicubic), defaultvalue(0)] INT interpolationMode, [out,retval] IGdiBitmap ** pp);
     STDMETHOD(GetColorScheme)(UINT count, [out,retval] VARIANT * outArray);
 	STDMETHOD(GetPixel)(INT x , INT y , [out,retval] INT * p);
+	STDMETHOD(SaveAs)(BSTR path, [defaultvalue("image/png")]BSTR format, [out,retval] VARIANT_BOOL *p);
 };
 
 [

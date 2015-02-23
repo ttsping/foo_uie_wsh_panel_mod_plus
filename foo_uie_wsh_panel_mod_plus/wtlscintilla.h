@@ -1942,6 +1942,16 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		::SendMessage(m_hWnd,SCI_SETMODEVENTMASK,nMask,0L);
 	}
+
+	//@}
+	/** @name Line wrapping */
+	//@{
+
+	void SetLineWrapMode(int nMode)
+	{
+		ATLASSERT(::IsWindow(m_hWnd));
+		::SendMessage(m_hWnd,SCI_SETWRAPMODE,nMode,0L);
+	}
 };
 
 class CScintillaCtrl : public CScintillaImpl< CScintillaCtrl >

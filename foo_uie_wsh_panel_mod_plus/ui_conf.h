@@ -1,5 +1,6 @@
 #pragma once
 
+#include "splitter_window.h"
 #include "editorctrl.h"
 #include "resource.h"
 
@@ -13,15 +14,26 @@ class CDialogConf
 	: public CDialogImpl<CDialogConf>
 	, public CDialogResize<CDialogConf>
 {
+public:
+	class wsh_console_receiver_impl : public console_receiver
+	{
+	public:
+		virtual void print(const char * p_message, unsigned p_message_length);
+	};
+
+	static HWND g_cfgdlg;//ensure that there is only one dlg instance.
+
 private:
-	CScriptEditorCtrl m_editorctrl;
-	CDialogFind * m_dlgfind;
-	CDialogReplace * m_dlgreplace;
-	wsh_panel_window * m_parent;
-	CDialogConf ** m_self;
-	pfc::string8 m_caption;
-    unsigned int m_lastFlags;
-    pfc::string8 m_lastSearchText;
+	wsh_splitter_window   m_split_wnd;
+	CScriptEditorCtrl     m_editorctrl;
+	CScriptEditorCtrl     m_consolectrl;
+	CDialogFind *         m_dlgfind;
+	CDialogReplace *      m_dlgreplace;
+	wsh_panel_window *    m_parent;
+	CDialogConf **        m_self;
+	pfc::string8          m_caption;
+	unsigned int          m_lastFlags;
+	pfc::string8          m_lastSearchText;
 
 public:
 	CDialogConf(wsh_panel_window * p_parent , CDialogConf ** p_self) 
@@ -60,10 +72,11 @@ public:
 
 	BEGIN_MSG_MAP(CDialogConf)
 		MSG_WM_INITDIALOG(OnInitDialog)
-		MSG_WM_CONTEXTMENU(OnContextMenu)
 		MSG_WM_NOTIFY(OnNotify)
 		MESSAGE_HANDLER(UWM_KEYDOWN, OnUwmKeyDown)
         MESSAGE_HANDLER(UWM_FINDTEXTCHANGED, OnUwmFindTextChanged)
+		MESSAGE_HANDLER(UWM_CONSOLE_PRINT,OnUwmConsolePrint)
+		COMMAND_ID_HANDLER_EX(IDC_SHOW_CONSOLE_PANE,OnShowConsolePane)
 		COMMAND_RANGE_HANDLER_EX(IDOK, IDCANCEL, OnCloseCmd)
 		COMMAND_ID_HANDLER_EX(IDAPPLY, OnCloseCmd)
 		COMMAND_HANDLER_EX(IDC_SCRIPT_ENGINE, CBN_SELENDOK, OnScriptEngineCbnSelEndOk)
@@ -77,7 +90,8 @@ public:
 		DLGRESIZE_CONTROL(IDC_CHECK_GRABFOCUS, DLSZ_MOVE_X)
 		DLGRESIZE_CONTROL(IDC_CHECK_DELAY_LOAD, DLSZ_MOVE_X)
 		DLGRESIZE_CONTROL(IDC_TOOLS, DLSZ_MOVE_Y)
-		DLGRESIZE_CONTROL(IDC_EDIT, DLSZ_SIZE_X | DLSZ_SIZE_Y)
+		DLGRESIZE_CONTROL(IDC_SHOW_CONSOLE_PANE, DLSZ_MOVE_Y)
+		DLGRESIZE_CONTROL(IDC_STATIC_HOLDER, DLSZ_SIZE_X | DLSZ_SIZE_Y)
 		DLGRESIZE_CONTROL(IDOK, DLSZ_MOVE_X | DLSZ_MOVE_Y)  
 		DLGRESIZE_CONTROL(IDAPPLY, DLSZ_MOVE_X | DLSZ_MOVE_Y)
 		DLGRESIZE_CONTROL(IDCANCEL, DLSZ_MOVE_X | DLSZ_MOVE_Y)
@@ -86,7 +100,7 @@ public:
 
 public:
 	LRESULT OnInitDialog(HWND hwndFocus, LPARAM lParam);
-	VOID    OnContextMenu(CWindow wnd, CPoint point);    
+	void OnShowConsolePane(UINT uNotifyCode, int nID, CWindow wndCtl);
 	LRESULT OnCloseCmd(WORD wNotifyCode, WORD wID, HWND hWndCtl);
 	LRESULT OnScriptEngineCbnSelEndOk(WORD wNotifyCode, WORD wID, HWND hWndCtl);
 	LRESULT OnTools(WORD wNotifyCode, WORD wID, HWND hWndCtl);
@@ -94,6 +108,7 @@ public:
 	LRESULT OnNCDestroy();
 	LRESULT OnUwmKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
     LRESULT OnUwmFindTextChanged(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+	LRESULT OnUwmConsolePrint(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
     static bool FindNext(HWND hWnd, HWND hWndEdit, unsigned flags, const char *which);
     static bool FindPrevious(HWND hWnd, HWND hWndEdit, unsigned flags, const char *which);
     static bool FindResult(HWND hWnd, HWND hWndEdit, int pos, const char *which);

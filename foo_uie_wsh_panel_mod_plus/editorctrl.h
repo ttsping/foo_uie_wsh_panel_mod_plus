@@ -63,6 +63,7 @@ public:
 	void SetLanguage(const char * lang);
 	void SetJScript();
 	void SetVBScript();
+	void SetNone();
 	void SetFold();
 	void TrackWidth();
 	void SetAllStylesFromTable(const t_style_to_key_table table[]);
@@ -84,6 +85,7 @@ public:
 	// Message map and handlers
 	BEGIN_MSG_MAP(CScriptEditorCtrl)
 		MESSAGE_HANDLER(WM_KEYDOWN, OnKeyDown)
+		MESSAGE_HANDLER(WM_CONTEXTMENU,OnContextMenu)
 		REFLECTED_NOTIFY_CODE_HANDLER_EX(SCN_UPDATEUI, OnUpdateUI)
 		REFLECTED_NOTIFY_CODE_HANDLER_EX(SCN_CHARADDED, OnCharAdded)
 		REFLECTED_NOTIFY_CODE_HANDLER_EX(SCN_ZOOM, OnZoom)
@@ -91,6 +93,7 @@ public:
 	END_MSG_MAP()
 
 	LRESULT OnKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+	LRESULT OnContextMenu(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT OnUpdateUI(LPNMHDR pnmn);
 	LRESULT OnCharAdded(LPNMHDR pnmh);
 	LRESULT OnZoom(LPNMHDR pnmn);

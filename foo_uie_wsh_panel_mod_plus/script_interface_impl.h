@@ -87,6 +87,10 @@ public:
     STDMETHODIMP Resize(UINT w, UINT h, INT interpolationMode, IGdiBitmap ** pp);
     STDMETHODIMP GetColorScheme(UINT count, VARIANT * outArray);
 	STDMETHODIMP GetPixel(INT x , INT y , INT * p);
+	STDMETHODIMP SaveAs(BSTR path, BSTR format, VARIANT_BOOL *p);
+
+private:
+	int GetEncoderClsid(const WCHAR* format, CLSID* pClsid);
 };
 
 class GdiGraphics : public GdiObj<IGdiGraphics, Gdiplus::Graphics>

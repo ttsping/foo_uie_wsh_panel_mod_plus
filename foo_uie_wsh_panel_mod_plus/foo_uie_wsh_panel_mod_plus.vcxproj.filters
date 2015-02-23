@@ -320,6 +320,9 @@
     <ClInclude Include="wsh_playlist_misc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="splitter_window.h">
+      <Filter>Header Files\Misc</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="res\default.js">

@@ -1009,7 +1009,8 @@ void CScriptEditorCtrl::RestoreDefaultStyle()
 	StyleResetDefault();
 
 	// enable line numbering
-	//SetMarginWidthN(1, 0);
+	SetMarginWidthN(MARGIN_LINE_NUMBER,1);
+	SetMarginWidthN(MARGIN_FOLD, 1);
 	SetMarginWidthN(2, 0);
 	SetMarginWidthN(3, 0);
 	SetMarginWidthN(4, 0);
@@ -1071,6 +1072,10 @@ void CScriptEditorCtrl::SetLanguage(const char * lang)
 	{
 		SetVBScript();
 	}
+	else
+	{
+		SetNone();
+	}
 
 	ReadAPI();
 }
@@ -1123,6 +1128,25 @@ void CScriptEditorCtrl::SetVBScript()
 	SetAllStylesFromTable(vbs_style_table);
 	// Colorise
 	Colourise(0, -1);
+}
+
+void CScriptEditorCtrl::SetNone()
+{
+
+	//RestoreDefaultStyle();
+	//do not display any margin
+	SetMarginWidthN(MARGIN_LINE_NUMBER, 0);
+	SetMarginWidthN(MARGIN_FOLD,0);
+	SetMarginWidthN(2, 0);
+	SetMarginWidthN(3, 0);
+	SetMarginWidthN(4, 0);
+	// Scrollbar
+	SetHScrollBar(false);
+	SetLineWrapMode(SC_WRAP_CHAR);
+	// Set lexer
+	SetLexer(SCLEX_NULL);
+	// Disable fold
+	SetProperty("fold","0");
 }
 
 void CScriptEditorCtrl::TrackWidth()
@@ -1210,6 +1234,10 @@ void CScriptEditorCtrl::AutoMarginWidth()
 	int marginwidth, oldmarginwidth;
 	int linecount;
 
+	oldmarginwidth = GetMarginWidthN(0);
+
+	if(!oldmarginwidth)return;
+
 	linecount = GetLineCount();
 
 	while (linecount >= 10)
@@ -1218,7 +1246,7 @@ void CScriptEditorCtrl::AutoMarginWidth()
 		++linenumwidth;
 	}
 
-	oldmarginwidth = GetMarginWidthN(0);
+	
 	marginwidth = 4 + linenumwidth * (TextWidth(STYLE_LINENUMBER, "9"));
 
 	if (oldmarginwidth != marginwidth)
@@ -1386,8 +1414,103 @@ void CScriptEditorCtrl::ReadAPI()
 LRESULT CScriptEditorCtrl::OnKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
 	bHandled = FALSE;
-	::PostMessage(::GetAncestor(m_hWnd, GA_PARENT), UWM_KEYDOWN, wParam, lParam);
+	::PostMessage(::GetAncestor(m_hWnd, GA_ROOT), UWM_KEYDOWN, wParam, lParam);
 	return TRUE;
+}
+
+LRESULT CScriptEditorCtrl::OnContextMenu( UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled )
+{
+	enum
+	{
+		kCmdUndo = 1 ,
+		kCmdRedo ,
+		kCmdCut ,
+		kCmdCopy ,
+		kCmdPaste ,
+		kCmdDelete ,
+		kCmdSelectAll ,
+		kCmdOutliningToggle ,
+		kCmdOutliningToggleAll ,
+
+	};
+
+	int cmd = 0;
+	const int flag_normal = MF_STRING;
+	const int flag_separator = MF_SEPARATOR;
+	const int flag_disable = flag_normal | MF_GRAYED | MF_DISABLED;
+	const int flag_submenu = flag_normal | MF_POPUP;
+
+	CPoint point(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+
+	CMenu context_menu;
+	context_menu.CreatePopupMenu();
+
+	bool read_only = !GetReadOnly();
+	AppendMenu(context_menu,(read_only && CanUndo() ? flag_normal : flag_disable), kCmdUndo, _T("Undo"));
+	AppendMenu(context_menu,(read_only && CanRedo() ? flag_normal : flag_disable), kCmdRedo, _T("Redo"));
+	AppendMenu(context_menu,flag_separator,NULL,NULL);
+	AppendMenu(context_menu,(read_only && !GetSelectionEmpty() ? flag_normal : flag_disable),kCmdCut,_T("Cut"));
+	AppendMenu(context_menu,(!GetSelectionEmpty() ? flag_normal : flag_disable),kCmdCopy,_T("Copy"));
+	AppendMenu(context_menu,(read_only && CanPaste() ? flag_normal : flag_disable),kCmdPaste,_T("Paste"));
+	AppendMenu(context_menu,(read_only && !GetSelectionEmpty() ? flag_normal : flag_disable),kCmdDelete,_T("Delete"));
+	AppendMenu(context_menu,flag_separator,NULL,NULL);
+	AppendMenu(context_menu,flag_normal,kCmdSelectAll,_T("Select All"));
+	
+	//outline menu
+	CMenu outline_menu;
+	char buf[2] = { 0 };//always be '0' or '1';
+	GetProperty("fold",buf);
+	BOOL fold_enable = (strcmp("1",buf) == 0);
+	if (fold_enable){
+		outline_menu.CreateMenu();
+		AppendMenu(context_menu,flag_separator,NULL,NULL);
+		AppendMenu(outline_menu,flag_normal,kCmdOutliningToggle,_T("Toggle Outlining Expansion"));
+		AppendMenu(outline_menu,flag_normal,kCmdOutliningToggleAll,_T("Toggle All Outlining"));
+		AppendMenu(context_menu,flag_submenu,(UINT_PTR)outline_menu.m_hMenu,_T("Outlining"));
+	}
+	
+	cmd = context_menu.TrackPopupMenu(TPM_RIGHTBUTTON | TPM_NONOTIFY | TPM_RETURNCMD,point.x,point.y,m_hWnd);
+
+	switch(cmd){
+	case kCmdUndo:
+		Undo();
+		break;
+	case kCmdRedo:
+		Redo();
+		break;
+	case kCmdCut:
+		Cut();
+		break;
+	case kCmdCopy:
+		Copy();
+		break;
+	case kCmdPaste:
+		Paste();
+		break;
+	case kCmdDelete:
+		Clear();
+		break;
+	case kCmdSelectAll:
+		SelectAll();
+		break;
+	case kCmdOutliningToggle:
+		{
+			CPoint temp(point);
+			ScreenToClient(&temp);
+			SCNotification sc;
+			sc.nmhdr.hwndFrom = m_hWnd;
+			sc.nmhdr.idFrom = GetDlgCtrlID();
+			sc.nmhdr.code = SCN_MARGINCLICK;
+			sc.position = PositionFromPoint(temp.x,temp.y);
+			sc.modifiers = 0;
+			::SendMessage(::GetAncestor(m_hWnd, GA_ROOT), WM_NOTIFY, NULL, (LPARAM)&sc);
+		}
+		break;
+	case kCmdOutliningToggleAll:
+		FoldAll(SC_FOLDACTION_TOGGLE);
+		break;
+	}
+	return 0;
 }
 
 LRESULT CScriptEditorCtrl::OnUpdateUI(LPNMHDR pnmn)
@@ -1502,4 +1625,6 @@ LRESULT CScriptEditorCtrl::OnChange(UINT uNotifyCode, int nID, HWND wndCtl)
 
 	return 0;
 }
+
+
 

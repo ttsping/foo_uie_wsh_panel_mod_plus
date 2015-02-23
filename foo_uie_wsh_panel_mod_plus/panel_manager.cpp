@@ -14,6 +14,7 @@ namespace
 	static service_factory_single_t<my_playlist_callback> g_my_playlist_callback;
 	static initquit_factory_t<nonautoregister_callbacks> g_nonautoregister_callbacks;
     static play_callback_static_factory_t<my_playback_queue_callback> g_my_playback_queue_callback;
+	static library_callback_factory_t<my_library_callback> g_my_library_callback;
 }
 
 void panel_manager::send_msg_to_all(UINT p_msg, WPARAM p_wp, LPARAM p_lp)
@@ -291,4 +292,10 @@ void my_playlist_callback::on_playlist_renamed(t_size p_index,const char * p_new
 void my_playback_queue_callback::on_changed(t_change_origin p_origin)
 {
     panel_manager::instance().post_msg_to_all(CALLBACK_UWM_ON_PLAYBACK_QUEUE_CHANGED, (WPARAM)p_origin);
+}
+
+
+void my_library_callback::on_items_changed( t_item_action p_action )
+{
+	panel_manager::instance().post_msg_to_all(CALLBACK_UWM_ON_LIBRARY_CHANGED,(WPARAM)p_action,NULL);
 }

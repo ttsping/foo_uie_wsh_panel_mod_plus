@@ -419,6 +419,58 @@ STDMETHODIMP GdiBitmap::GetPixel( INT x , INT y , INT * p )
 	return S_OK;
 }
 
+STDMETHODIMP GdiBitmap::SaveAs( BSTR path, BSTR format, VARIANT_BOOL *p)
+{
+	TRACK_FUNCTION();
+
+	if(!p||!m_ptr)return E_POINTER;
+
+	CLSID clsid_encoder;
+
+	int ret = GetEncoderClsid(format,&clsid_encoder);
+
+	(*p) = TO_VARIANT_BOOL(ret != -1);
+
+	m_ptr->Save(path,&clsid_encoder);
+
+	(*p) = TO_VARIANT_BOOL(m_ptr->GetLastStatus() == Gdiplus::Ok);
+
+	return S_OK;
+}
+
+int GdiBitmap::GetEncoderClsid( const WCHAR* format, CLSID* pClsid )
+{
+	TRACK_FUNCTION();
+
+	int ret = -1;
+
+	UINT  num_of_encoders = 0;
+	UINT  size_of_encoder = 0;
+
+	Gdiplus::ImageCodecInfo* pImageCodecInfo = NULL;
+
+	Gdiplus::GetImageEncodersSize(&num_of_encoders, &size_of_encoder);
+	if(size_of_encoder == 0)return ret;
+
+	pImageCodecInfo = (Gdiplus::ImageCodecInfo*)(malloc((size_t)size_of_encoder));
+	if(pImageCodecInfo == NULL)return ret;
+
+	Gdiplus::GetImageEncoders(num_of_encoders, size_of_encoder, pImageCodecInfo);
+
+	for(UINT j = 0; j < num_of_encoders; ++j)
+	{
+		if( wcscmp(pImageCodecInfo[j].MimeType, format) == 0 )
+		{
+			*pClsid = pImageCodecInfo[j].Clsid;
+			ret = j;
+			break;
+		}    
+	}
+
+	free(pImageCodecInfo);
+	return ret;
+}
+
 void GdiGraphics::GetRoundRectPath(Gdiplus::GraphicsPath & gp, Gdiplus::RectF & rect, float arc_width, float arc_height)
 {
     TRACK_FUNCTION();
