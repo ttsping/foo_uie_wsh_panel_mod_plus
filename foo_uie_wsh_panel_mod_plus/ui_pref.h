@@ -59,7 +59,8 @@ public:
 
 	const char * get_name()
 	{
-		return WSPM_NAME;
+		static pfc::string8 mod;
+		return load_lang(IDS_WSHM_NAME, mod);
 	}
 
 	GUID get_guid()

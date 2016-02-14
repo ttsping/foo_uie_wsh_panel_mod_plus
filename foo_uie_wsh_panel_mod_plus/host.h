@@ -119,14 +119,14 @@ public:
 	STDMETHODIMP CreateTimerTimeout(UINT timeout, ITimerObj ** pp);
 	STDMETHODIMP CreateTimerInterval(UINT delay, ITimerObj ** pp);
 	STDMETHODIMP KillTimer(ITimerObj * p);
-    STDMETHODIMP SetInterval(IDispatch * func, INT delay, UINT * outIntervalID);
-    STDMETHODIMP ClearInterval(UINT intervalID);
-    STDMETHODIMP SetTimeout(IDispatch * func, INT delay, UINT * outTimeoutID);
-    STDMETHODIMP ClearTimeout(UINT timeoutID);
+	STDMETHODIMP SetInterval(IDispatch * func, INT delay, UINT * outIntervalID);
+	STDMETHODIMP ClearInterval(UINT intervalID);
+	STDMETHODIMP SetTimeout(IDispatch * func, INT delay, UINT * outTimeoutID);
+	STDMETHODIMP ClearTimeout(UINT timeoutID);
 	STDMETHODIMP NotifyOthers(BSTR name, VARIANT info);
 	STDMETHODIMP WatchMetadb(IFbMetadbHandle * handle);
 	STDMETHODIMP UnWatchMetadb();
-	STDMETHODIMP CreateTooltip(IFbTooltip ** pp);
+	STDMETHODIMP CreateTooltip(BSTR name, float pxSize, INT style, IFbTooltip ** pp);
 	STDMETHODIMP ShowConfigure();
 	STDMETHODIMP ShowProperties();
 	STDMETHODIMP GetProperty(BSTR name, VARIANT defaultval, VARIANT * p);
@@ -138,6 +138,8 @@ public:
 	STDMETHODIMP GetColorDUI(UINT type, int * p);
 	STDMETHODIMP GetFontDUI(UINT type, IGdiFont ** pp);
 	STDMETHODIMP CreateThemeManager(BSTR classid, IThemeManager ** pp);
+
+	STDMETHODIMP Reload();
 };
 
 class ScriptHost : 

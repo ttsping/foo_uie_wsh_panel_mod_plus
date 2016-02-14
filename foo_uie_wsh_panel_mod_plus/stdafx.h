@@ -1,8 +1,8 @@
 #pragma once
 
 
-#define _WIN32_WINNT 0x0700 // Require Windows 7
-#define WINVER 0x0700
+#define _WIN32_WINNT 0x0601 // Require Windows 7
+#define WINVER 0x0601
 #define _WIN32_IE 0x600
 
 // Undefine to enable VLD
@@ -36,19 +36,19 @@
 // ATL/WTL
 #define _WTL_USE_CSTRING
 //#define _WTL_NO_WTYPES
-#include <atlbase.h>
-#include <atlapp.h>
+#include "atlbase.h"
+#include "atlapp.h"
 
-#include <atlwin.h>
-#include <atlframe.h>
-#include <atldlgs.h>
-#include <atlsplit.h>
-#include <atlctrls.h>
-#include <atlctrlx.h>
-#include <atlddx.h>
-#include <atlcrack.h>
-#include <atltheme.h>
-#include <atlmisc.h>
+#include "atlwin.h"
+#include "atlframe.h"
+#include "atldlgs.h"
+#include "atlsplit.h"
+#include "atlctrls.h"
+#include "atlctrlx.h"
+#include "atlddx.h"
+#include "atlcrack.h"
+#include "atltheme.h"
+#include "atlmisc.h"
 
 // Other controls
 #define STATIC_BUILD 1
@@ -67,3 +67,4 @@
 #endif
 
 #include "component_defines.h"
+#include "lang.h"

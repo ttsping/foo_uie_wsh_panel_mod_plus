@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "wsh_panel_window.h"
 #include "wsh_panel_window_dui.h"
-
+#include "resource.h"
 
 // Just because I don't want to include the helpers
 template<typename TImpl>
@@ -23,6 +23,7 @@ public:
     ui_element_config::ptr get_default_configuration() { return TImpl::g_get_default_configuration(); }
     ui_element_children_enumerator_ptr enumerate_children(ui_element_config::ptr cfg) {return NULL;}
     bool get_description(pfc::string_base & out) {out = TImpl::g_get_description(); return true;}
+	bool get_element_group(pfc::string_base & p_out) { load_lang(IDS_ELEMENT_GROUP, p_out); return true; }
 
 private:
     class ui_element_instance_impl_helper : public TImpl 
@@ -82,12 +83,14 @@ ui_element_config::ptr wsh_panel_window_dui::get_configuration()
 
 void wsh_panel_window_dui::g_get_name(pfc::string_base & out)
 {
-    out = WSPM_NAME;
+    load_lang(IDS_WSHM_NAME, out);
 }
 
 pfc::string8 wsh_panel_window_dui::g_get_description()
 {
-    return "Customizable panel with VBScript and JScript scripting support.";
+	static pfc::string8 lang_decription;
+	load_lang(IDS_DUI_DECRIPTION, lang_decription);
+    return lang_decription;
 }
 
 GUID wsh_panel_window_dui::g_get_guid()

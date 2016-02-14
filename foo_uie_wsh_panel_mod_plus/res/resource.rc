@@ -12,10 +12,313 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// English (United States) resources
+// Chinese (Simplified) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHS)
+LANGUAGE LANG_CHINESE, SUBLANG_NEUTRAL
+#pragma code_page(936)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_DIALOG_CONFIG DIALOGEX 0, 0, 361, 340
+STYLE DS_SETFONT | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
+EXSTYLE WS_EX_TOPMOST
+FONT 8, "Tahoma", 0, 0, 0x0
+BEGIN
+    DEFPUSHBUTTON   "确定(&O)",IDOK,196,319,50,14
+    PUSHBUTTON      "应用(&A)",IDAPPLY,250,319,50,14
+    PUSHBUTTON      "取消(&C)",IDCANCEL,304,319,50,14
+    COMBOBOX        IDC_SCRIPT_ENGINE,58,7,86,50,CBS_DROPDOWNLIST | WS_VSCROLL
+    COMBOBOX        IDC_EDGE_STYLE,58,30,50,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "仿真透明",IDC_CHECK_PSEUDO_TRANSPARENT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,272,7,48,10
+    CONTROL         "获取焦点(&G)",IDC_CHECK_GRABFOCUS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,272,20,58,10
+    CONTROL         "延迟加载(&D)",IDC_CHECK_DELAY_LOAD,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,272,33,58,10
+    RTEXT           "脚本引擎:",IDC_STATIC,16,9,36,8
+    RTEXT           "边框风格:",IDC_STATIC,7,32,45,8
+    EDITTEXT        IDC_STATIC_GUID,7,46,347,14,ES_CENTER | ES_READONLY | NOT WS_TABSTOP
+    PUSHBUTTON      "工具(&T)",IDC_TOOLS,7,319,50,14
+    CONTROL         "",IDC_STATIC_HOLDER,"Static",SS_BLACKFRAME | NOT WS_VISIBLE,7,63,347,253
+    CONTROL         "显示控制台面板(&S)",IDC_SHOW_CONSOLE_PANE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,66,322,81,10
+END
+
+IDD_DIALOG_FIND DIALOGEX 0, 0, 239, 96
+STYLE DS_SETFONT | WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
+CAPTION "查找"
+FONT 8, "Tahoma", 400, 0, 0x0
+BEGIN
+    CONTROL         "查找(&F):",IDC_STATIC,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,7,7,35,8
+    EDITTEXT        IDC_EDIT_FINDWHAT,7,17,168,14,ES_AUTOHSCROLL
+    CONTROL         "匹配大小写(&a)",IDC_CHECK_MATCHCASE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,37,65,10
+    CONTROL         "匹配整个单词(&W)",IDC_CHECK_WHOLEWORD,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,51,76,10
+    CONTROL         "从首个单词开始(&o)",IDC_CHECK_WORDSTART,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,65,81,10
+    CONTROL         "使用正则表达式(&R)",IDC_CHECK_REGEXP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,79,82,10
+    DEFPUSHBUTTON   "下一个(&D)",IDC_FINDDOWN,179,7,53,14
+    PUSHBUTTON      "上一个(&U)",IDC_FINDUP,179,26,53,14
+    PUSHBUTTON      "关闭(&C)",IDCANCEL,179,54,53,14
+END
+
+IDD_DIALOG_GOTO DIALOGEX 0, 0, 206, 59
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "跳转"
+FONT 8, "Tahoma", 400, 0, 0x1
+BEGIN
+    LTEXT           "行号:",IDC_STATIC,7,7,20,8
+    EDITTEXT        IDC_EDIT_LINENUMBER,7,17,192,14,ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "确定",IDOK,95,38,50,14
+    PUSHBUTTON      "取消",IDCANCEL,149,38,50,14
+END
+
+IDD_DIALOG_NAME_VALUE DIALOGEX 0, 0, 242, 62
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "编辑值"
+FONT 8, "Tahoma", 400, 0, 0x1
+BEGIN
+    LTEXT           "名称(&N):",IDC_STATIC,7,10,30,8
+    EDITTEXT        IDC_EDIT_NAME,45,7,190,14,WS_DISABLED
+    LTEXT           "值(&V):",IDC_STATIC,16,27,21,8
+    EDITTEXT        IDC_EDIT_VALUE,45,24,190,14,ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "确定",IDOK,131,41,50,14
+    PUSHBUTTON      "取消",IDCANCEL,185,41,50,14
+END
+
+IDD_DIALOG_PREFERENCE DIALOGEX 0, 0, 334, 269
+STYLE DS_SETFONT | WS_CHILD | WS_SYSMENU
+FONT 8, "Tahoma", 400, 0, 0x0
+BEGIN
+    GROUPBOX        "编辑器属性",IDC_STATIC,7,7,320,218
+    CONTROL         "",IDC_LIST_EDITOR_PROP,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP,12,18,310,184
+    PUSHBUTTON      "导入(&I)",IDC_BUTTON_IMPORT,219,206,50,14
+    PUSHBUTTON      "导出(&x)",IDC_BUTTON_EXPORT,273,206,50,14
+    GROUPBOX        "脚本引擎设置",IDC_STATIC,7,226,320,36
+    CONTROL         "安全模式",IDC_CHECK_SAFE_MODE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,242,54,10
+END
+
+IDD_DIALOG_PROPERTIES DIALOGEX 0, 0, 259, 213
+STYLE DS_SETFONT | WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
+FONT 8, "Tahoma", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "确定(&O)",IDOK,94,192,50,14
+    PUSHBUTTON      "取消",IDCANCEL,202,192,50,14
+    LISTBOX         IDC_LIST_PROPERTIES,7,24,245,161,LBS_OWNERDRAWVARIABLE | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "应用(&A)",IDAPPLY,148,192,50,14
+    PUSHBUTTON      "清除(&C)",IDC_CLEARALL,126,7,40,13
+    PUSHBUTTON      "删除(&D)",IDC_DEL,83,7,40,13
+    PUSHBUTTON      "导出(&E)",IDC_EXPORT,212,7,40,13
+    PUSHBUTTON      "导入(&I)",IDC_IMPORT,169,7,40,13
+END
+
+IDD_DIALOG_REPLACE DIALOGEX 0, 0, 249, 136
+STYLE DS_SETFONT | WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
+CAPTION "查找与替换"
+FONT 8, "Tahoma", 400, 0, 0x0
+BEGIN
+    CONTROL         "查找(&F):",IDC_STATIC,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,7,7,35,8
+    EDITTEXT        IDC_EDIT_FINDWHAT,7,17,168,14,ES_AUTOHSCROLL
+    LTEXT           "替换为(&l):",IDC_STATIC,7,35,34,8
+    EDITTEXT        IDC_EDIT_REPLACE,7,45,168,14,ES_AUTOHSCROLL
+    CONTROL         "匹配大小写",IDC_CHECK_MATCHCASE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,77,56,10
+    CONTROL         "匹配整个单词(&W)",IDC_CHECK_WHOLEWORD,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,91,76,10
+    CONTROL         "从首单词开始",IDC_CHECK_WORDSTART,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,105,64,10
+    CONTROL         "使用正则表达式",IDC_CHECK_REGEXP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,119,72,10
+    DEFPUSHBUTTON   "下一处(&N)",IDC_FINDNEXT,192,7,50,14
+    PUSHBUTTON      "替换(&R)",IDC_REPLACE,192,25,50,14
+    PUSHBUTTON      "替换全部(&A)",IDC_REPLACEALL,192,43,50,14
+    PUSHBUTTON      "关闭(&C)",IDCANCEL,192,72,50,14
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_DIALOG_CONFIG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 354
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 333
+    END
+
+    IDD_DIALOG_FIND, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 232
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 89
+    END
+
+    IDD_DIALOG_GOTO, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 199
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 52
+    END
+
+    IDD_DIALOG_NAME_VALUE, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 235
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 55
+    END
+
+    IDD_DIALOG_PREFERENCE, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 327
+        VERTGUIDE, 12
+        VERTGUIDE, 322
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 262
+        HORZGUIDE, 18
+        HORZGUIDE, 225
+        HORZGUIDE, 226
+    END
+
+    IDD_DIALOG_PROPERTIES, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 252
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 206
+        HORZGUIDE, 20
+        HORZGUIDE, 24
+        HORZGUIDE, 185
+        HORZGUIDE, 192
+    END
+
+    IDD_DIALOG_REPLACE, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 242
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 129
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// SCRIPT
+//
+
+IDR_SCRIPT              SCRIPT                  "default_cn.js"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE
+BEGIN
+    IDS_ELEMENT_GROUP       "工具"
+    IDS_WSHM_NAME           "WSH 面板加强版"
+    IDS_CONFIG_ERROR        "错误: 配置需要新版本的插件才能使用或者文件损坏"
+    IDS_APIFILE_WARNING     "警告: 无法载入文件 "
+    IDS_EDIT_UNDO           "撤销"
+    IDS_EDIT_REDO           "重做"
+    IDS_EDIT_CUT            "剪切"
+    IDS_EDIT_COPY           "复制"
+    IDS_EDIT_PASTE          "粘贴"
+    IDS_EDIT_DELETE         "删除"
+    IDS_EDIT_SELECTALL      "全选"
+    IDS_EDIT_TOGGLE_OUTLINE "折叠当前代码"
+    IDS_EDIT_TOGGLE_OUTLINE_ALL "折叠所有代码"
+    IDS_EDIT_TOGGLE         "折叠代码"
+    IDS_WSHM_COPYRIGHT      "基于 Windows 脚本宿主面板 v%s\nMod 作者 T.P. Wang\n\nPlus Mod 作者 ttsping & Asion\n\n编译日期: %s %s\n分栏用户界面 API 版本: %s\n\n\n\nScintilla and SciTE\n版权所有 1998-2003 by Neil Hodgson <neilh@scintilla.org>\n\n\nText Designer Outline Text Library\n版权所有 (c) 2009 Wong Shao Voon\n\n\nbox blur filter\n版权所有 2006 Jerry Huxtable\n\n\nCPropertyList - A Property List control\n版权所有 (c) 2001-2003 Bjarke Viksoe\n\n\n"
+    IDS_WSHM_BETA_EXPIRED   "该beta版本超出两周使用期限，获取最新版本插件请访问: http://foo-wsh-panel-mod.googlecode.com\n\n"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_WSHM_ERROR          "这个错误信息意味着这个插件无法正常运行:\n\n"
+    IDS_WSHM_ERROR_OLE      "OLE: 初始化 OLE 失败.\n\n"
+    IDS_WSHM_ERROR_TYPELIB  "Type Library: 载入 TypeLib 失败.\n\n"
+    IDS_WSHM_ERROR_SCINTILLA "Scintilla: 载入 Scintilla 失败.\n\n"
+    IDS_WSHM_ERROR_GDIPLUS  "Gdiplus: 载入 Gdiplus 失败.\n\n"
+    IDS_OBSOLETE_MSG        "%s 现已废弃，请在新脚本中使用 %s."
+    IDS_EXCEPT_CPP          "未处理的 C++ 异常"
+    IDS_EXCEPT_COM          "未处理的 COM 错误"
+    IDS_EXCEPT_UNKNOWN      "未处理的未知错误"
+    IDS_EXCEPT_MSG          "将会崩溃.."
+    IDS_SCRIPT_ERROR        "<源文本仅在编译时可用>"
+    IDS_SCRIPT_ERROR_UNKNOWN "未知错误代码"
+    IDS_SCRIPT_ERROR_FILE   "文件"
+    IDS_SCRIPT_ERROR_LINE   "行"
+    IDS_SCRIPT_ERROR_AT     "在"
+    IDS_SCRIPT_ERROR_COL    "列"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_OK                  "确定(&O)"
+    IDS_CANCEL              "取消(&C)"
+    IDS_OBSOLETE_WARNING    "警告: 已废弃"
+    IDS_OBSOLETE_MENU       "请使用 %s 代替 %s 创建子菜单"
+    IDS_ERROR               "错误"
+    IDS_ERROR_PARSE_FILE    "解析文件"
+    IDS_ERROR_FAIL_LOAD     "载入失败"
+    IDS_UI_CONF             "配置"
+    IDS_EDGE_STYLE_NONE     "无"
+    IDS_EDGE_STYLE_SUNKEN   "凹陷"
+    IDS_EDGE_STYLE_GREY     "灰白"
+    IDS_SCRIPT_CHANGE_TIP   "你想要应用更改吗?"
+    IDS_IMPORT_FILE_TYPE    "文本文件|*.txt|JScript 文件|*.js|所有文件|*.*"
+    IDS_IMPORT_SAVE_AS      "另存为"
+    IDS_IMPORT_IMPORT       "从导入"
+    IDS_TOOL_MENU_IMPORT    "导入(&I)"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_TOOL_MENU_EXPORT    "导出(&x)"
+    IDS_TOOL_MENU_RESET_DEFAULT "重置为默认(&D)"
+    IDS_TOOL_MENU_RESET_CURRENT "重置为当前(&C)"
+    IDS_MSG_CANNT_FIND      "无法找到"
+    IDS_CAPTION_TOOL        "工具"
+    IDS_CAPTION_CLEAR       "清除"
+    IDS_UI_PROPERTY_NAME    "名称"
+    IDS_UI_PROPERTY_VALUE   "值"
+    IDS_CONF_IMPORT_FILETYPE "配置文件|*.cfg|所有文件|*.*"
+    IDS_PROP_IMPORT_FILETYPE "属性文件|*.wsp|所有文件|*.*"
+    IDS_SCRIPT_ENGINE_INIT_FAILED "脚本引擎初始化失败"
+    IDS_SCRIPT_FAILED_MSG   "控制台可查看更多信息(脚本错误的原因)."
+    IDS_SCRIPT_INIT_TIME    "初始化用时"
+    IDS_MS                  " 毫秒"
+    IDS_PANEL               "面板"
+    IDS_ERROR_LAST_RUN      "拒绝载入上次运行发生严重错误的脚本,  请检查您的脚本并重新应用."
+END
+
+STRINGTABLE
+BEGIN
+    IDS_SCRIPT_CRASH        "O.o，脚本有错误哦！:("
+    IDS_MENU_PROP           "属性(&P)"
+    IDS_MENU_CONF           "配置(&C)..."
+    IDS_MENU_RELOAD         "重载脚本(&S)"
+    IDS_PANELS              "面板"
+    IDS_CUI_WARNING         "警告: 至少一个 %s 实例运行于类CUI的容器 (浮动面板，FUI，等等) 但却无法使用分栏用户界面提供的一些基本服务 (没有或者使用很旧的分栏用户界面版本?)。\n请下载并安装最新版本的分栏用户界面:\nhttp://yuo.be/columns.php\n\n[这个提示信息仅弹出显示一次]"
+    IDS_DUI_DECRIPTION      "自定义的面板支持使用VBScript和JScript脚本."
+    IDS_WSHM_DOCS           "WSHM 帮助文档"
+END
+
+#endif    // Chinese (Simplified) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+LANGUAGE LANG_ENGLISH, SUBLANG_NEUTRAL
 #pragma code_page(1252)
 
 /////////////////////////////////////////////////////////////////////////////
@@ -36,27 +339,6 @@ BEGIN
     PUSHBUTTON      "De&lete",IDC_DEL,83,7,40,13
     PUSHBUTTON      "E&xport",IDC_EXPORT,212,7,40,13
     PUSHBUTTON      "I&mport",IDC_IMPORT,169,7,40,13
-END
-
-IDD_DIALOG_CONFIG DIALOGEX 0, 0, 361, 340
-STYLE DS_SETFONT | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
-EXSTYLE WS_EX_TOPMOST
-FONT 8, "Tahoma", 0, 0, 0x0
-BEGIN
-    DEFPUSHBUTTON   "&OK",IDOK,196,319,50,14
-    PUSHBUTTON      "&Apply",IDAPPLY,250,319,50,14
-    PUSHBUTTON      "&Cancel",IDCANCEL,304,319,50,14
-    COMBOBOX        IDC_SCRIPT_ENGINE,58,7,86,50,CBS_DROPDOWNLIST | WS_VSCROLL
-    COMBOBOX        IDC_EDGE_STYLE,58,30,50,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    CONTROL         "Pseudo Transparent",IDC_CHECK_PSEUDO_TRANSPARENT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,272,7,81,10
-    CONTROL         "&Grab Focus",IDC_CHECK_GRABFOCUS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,272,20,52,10
-    CONTROL         "&Delay Load",IDC_CHECK_DELAY_LOAD,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,272,33,47,10
-    RTEXT           "Script Engine:",IDC_STATIC,7,9,45,8
-    RTEXT           "Edge Style:",IDC_STATIC,7,32,45,8
-    EDITTEXT        IDC_STATIC_GUID,7,46,347,14,ES_CENTER | ES_READONLY | NOT WS_TABSTOP
-    PUSHBUTTON      "&Tools",IDC_TOOLS,7,319,50,14
-    CONTROL         "",IDC_STATIC_HOLDER,"Static",SS_BLACKFRAME | NOT WS_VISIBLE,7,63,347,253
-    CONTROL         "Show Console Pane",IDC_SHOW_CONSOLE_PANE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,66,322,79,10
 END
 
 IDD_DIALOG_FIND DIALOGEX 0, 0, 239, 96
@@ -130,6 +412,27 @@ BEGIN
     PUSHBUTTON      "Cancel",IDCANCEL,185,41,50,14
 END
 
+IDD_DIALOG_CONFIG DIALOGEX 0, 0, 361, 340
+STYLE DS_SETFONT | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
+EXSTYLE WS_EX_TOPMOST
+FONT 8, "Tahoma", 0, 0, 0x0
+BEGIN
+    DEFPUSHBUTTON   "&OK",IDOK,196,319,50,14
+    PUSHBUTTON      "&Apply",IDAPPLY,250,319,50,14
+    PUSHBUTTON      "&Cancel",IDCANCEL,304,319,50,14
+    COMBOBOX        IDC_SCRIPT_ENGINE,58,7,86,50,CBS_DROPDOWNLIST | WS_VSCROLL
+    COMBOBOX        IDC_EDGE_STYLE,58,30,50,30,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Pseudo Transparent",IDC_CHECK_PSEUDO_TRANSPARENT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,272,7,81,10
+    CONTROL         "&Grab Focus",IDC_CHECK_GRABFOCUS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,272,20,52,10
+    CONTROL         "&Delay Load",IDC_CHECK_DELAY_LOAD,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,272,33,47,10
+    RTEXT           "Script Engine:",IDC_STATIC,7,9,45,8
+    RTEXT           "Edge Style:",IDC_STATIC,7,32,45,8
+    EDITTEXT        IDC_STATIC_GUID,7,46,347,14,ES_CENTER | ES_READONLY | NOT WS_TABSTOP
+    PUSHBUTTON      "&Tools",IDC_TOOLS,7,319,50,14
+    CONTROL         "",IDC_STATIC_HOLDER,"Static",SS_BLACKFRAME | NOT WS_VISIBLE,7,63,347,253
+    CONTROL         "Show Console Pane",IDC_SHOW_CONSOLE_PANE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,66,322,79,10
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -149,14 +452,6 @@ BEGIN
         HORZGUIDE, 24
         HORZGUIDE, 185
         HORZGUIDE, 192
-    END
-
-    IDD_DIALOG_CONFIG, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 354
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 333
     END
 
     IDD_DIALOG_FIND, DIALOG
@@ -203,9 +498,132 @@ BEGIN
         TOPMARGIN, 7
         BOTTOMMARGIN, 55
     END
+
+    IDD_DIALOG_CONFIG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 354
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 333
+    END
 END
 #endif    // APSTUDIO_INVOKED
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// SCRIPT
+//
+
+IDR_SCRIPT              SCRIPT                  "./default.js"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE
+BEGIN
+    IDS_ELEMENT_GROUP       "Utility"
+    IDS_WSHM_NAME           "WSH Panel Mod Plus"
+    IDS_CONFIG_ERROR        "Error: Configuration needs a newer component or is corrupted"
+    IDS_APIFILE_WARNING     "Warning: Could not load file "
+    IDS_EDIT_UNDO           "Undo"
+    IDS_EDIT_REDO           "Redo"
+    IDS_EDIT_CUT            "Cut"
+    IDS_EDIT_COPY           "Copy"
+    IDS_EDIT_PASTE          "Paste"
+    IDS_EDIT_DELETE         "Delete"
+    IDS_EDIT_SELECTALL      "Select All"
+    IDS_EDIT_TOGGLE_OUTLINE "Toggle Outlining Expansion"
+    IDS_EDIT_TOGGLE_OUTLINE_ALL "Toggle All Outlining"
+    IDS_EDIT_TOGGLE         "Outlining"
+    IDS_WSHM_COPYRIGHT      "Based On Windows Scripting Host Panel Modded v%s\nModded by T.P. Wang\n\nPlus Modded by ttsping & Asion\n\nBuild: %s %s\nColumns UI API Version: %s\n\n\n\nScintilla and SciTE\nCopyright 1998-2003 by Neil Hodgson <neilh@scintilla.org>\n\n\nText Designer Outline Text Library\nCopyright (c) 2009 Wong Shao Voon\n\n\nbox blur filter\nCopyright 2006 Jerry Huxtable\n\n\nCPropertyList - A Property List control\nCopyright (c) 2001-2003 Bjarke Viksoe\n\n\n"
+    IDS_WSHM_BETA_EXPIRED   "This beta version is over two weeks old, please get a new one now.\nVisit: http://foo-wsh-panel-mod.googlecode.com\n\n"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_WSHM_ERROR          "This error message indicates that means this component will not function properly:\n\n"
+    IDS_WSHM_ERROR_OLE      "OLE: Initialize OLE Failed.\n\n"
+    IDS_WSHM_ERROR_TYPELIB  "Type Library: Load TypeLib Failed.\n\n"
+    IDS_WSHM_ERROR_SCINTILLA "Scintilla: Load Scintilla Failed.\n\n"
+    IDS_WSHM_ERROR_GDIPLUS  "Gdiplus: Load Gdiplus Failed.\n\n"
+    IDS_OBSOLETE_MSG        "%s is now obsolete, please use %s in new script."
+    IDS_EXCEPT_CPP          "Unhandled C++ Exception"
+    IDS_EXCEPT_COM          "Unhandled COM Error"
+    IDS_EXCEPT_UNKNOWN      "Unhandled Unknown Exception"
+    IDS_EXCEPT_MSG          "will crash now.."
+    IDS_SCRIPT_ERROR        "<source text only available at compile time>"
+    IDS_SCRIPT_ERROR_UNKNOWN "Unknown error code"
+    IDS_SCRIPT_ERROR_FILE   "File"
+    IDS_SCRIPT_ERROR_LINE   "Ln"
+    IDS_SCRIPT_ERROR_AT     "At"
+    IDS_SCRIPT_ERROR_COL    "Col"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_OK                  "OK(&O)"
+    IDS_CANCEL              "Cancel(&C)"
+    IDS_OBSOLETE_WARNING    "Warning: Obsolete"
+    IDS_OBSOLETE_MENU       "Please use %s method to create sub menu instead of %s"
+    IDS_ERROR               "Error"
+    IDS_ERROR_PARSE_FILE    "Parsing file"
+    IDS_ERROR_FAIL_LOAD     "Failed to load"
+    IDS_UI_CONF             "Configuration"
+    IDS_EDGE_STYLE_NONE     "None"
+    IDS_EDGE_STYLE_SUNKEN   "Sunken"
+    IDS_EDGE_STYLE_GREY     "Grey"
+    IDS_SCRIPT_CHANGE_TIP   "Do you want to apply your changes?"
+    IDS_IMPORT_FILE_TYPE    "Text files|*.txt|JScript files|*.js|All files|*.*"
+    IDS_IMPORT_SAVE_AS      "Save as"
+    IDS_IMPORT_IMPORT       "Import from"
+    IDS_TOOL_MENU_IMPORT    "&Import"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_TOOL_MENU_EXPORT    "E&xport"
+    IDS_TOOL_MENU_RESET_DEFAULT "Reset &Default"
+    IDS_TOOL_MENU_RESET_CURRENT "Reset &Current"
+    IDS_MSG_CANNT_FIND      "Cannot find"
+    IDS_CAPTION_TOOL        "Tools"
+    IDS_CAPTION_CLEAR       "Clear"
+    IDS_UI_PROPERTY_NAME    "Name"
+    IDS_UI_PROPERTY_VALUE   "Value"
+    IDS_CONF_IMPORT_FILETYPE "Configuration files|*.cfg|All files|*.*"
+    IDS_PROP_IMPORT_FILETYPE "Property files|*.wsp|All files|*.*"
+    IDS_SCRIPT_ENGINE_INIT_FAILED "Scripting Engine Initialization Failed"
+    IDS_SCRIPT_FAILED_MSG   "Check the console for more information (Always caused by unexcepted script error)."
+    IDS_SCRIPT_INIT_TIME    "initialized in"
+    IDS_MS                  "ms"
+    IDS_PANEL               "Panel"
+    IDS_ERROR_LAST_RUN      "Refuse to load script due to critical error last run, please check your script and apply it again."
+END
+
+STRINGTABLE
+BEGIN
+    IDS_SCRIPT_CRASH        "Aw, crashed :("
+    IDS_MENU_PROP           "&Properties"
+    IDS_MENU_CONF           "&Configure..."
+    IDS_MENU_RELOAD         "Reload &Script"
+    IDS_PANELS              "Panels"
+    IDS_CUI_WARNING         "Warning: At least one %s instance is running in CUI containers (dockable panels, Func UI, etc) without some services provided by the Columns UI component (have not been installed or have a very old version installed?).\nPlease download and install the latest version of Columns UI:\nhttp://yuo.be/columns.php\n\n[This popup message will be shown only once]"
+    IDS_DUI_DECRIPTION      "Customizable panel with VBScript and JScript scripting support."
+    IDS_WSHM_DOCS           "WSHM Help Docs"
+END
+
+#endif    // English resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (United States) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -230,13 +648,6 @@ END
 
 #endif    // APSTUDIO_INVOKED
 
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// SCRIPT
-//
-
-IDR_SCRIPT              SCRIPT                  "./default.js"
 #endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 

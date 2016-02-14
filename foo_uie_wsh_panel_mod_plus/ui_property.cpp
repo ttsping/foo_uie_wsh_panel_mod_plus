@@ -141,9 +141,9 @@ LRESULT CDialogProperty::OnDelBnClicked(WORD wNotifyCode, WORD wID, HWND hWndCtl
 
 LRESULT CDialogProperty::OnImportBnClicked(WORD wNotifyCode, WORD wID, HWND hWndCtl)
 {
-	pfc::string8 filename;
+	pfc::string8 filename, lang_filetype, lang_import;
 
-	if (uGetOpenFileName(m_hWnd, "Property files|*.wsp|All files|*.*", 0, "wsp", "Import from", NULL, filename, FALSE))
+	if (uGetOpenFileName(m_hWnd, load_lang(IDS_PROP_IMPORT_FILETYPE, lang_filetype), 0, "wsp", load_lang(IDS_IMPORT_IMPORT, lang_filetype), NULL, filename, FALSE))
 	{
 		file_ptr io;
 		abort_callback_dummy abort;
@@ -167,9 +167,9 @@ LRESULT CDialogProperty::OnImportBnClicked(WORD wNotifyCode, WORD wID, HWND hWnd
 
 LRESULT CDialogProperty::OnExportBnClicked(WORD wNotifyCode, WORD wID, HWND hWndCtl)
 {
-	pfc::string8 path;
+	pfc::string8 path, lang_filetype, lang_saveas;
 
-	if (uGetOpenFileName(m_hWnd, "Property files|*.wsp", 0, "wsp", "Save as", NULL, path, TRUE))
+	if (uGetOpenFileName(m_hWnd, load_lang(IDS_PROP_IMPORT_FILETYPE, lang_filetype), 0, "wsp", load_lang(IDS_IMPORT_SAVE_AS, lang_saveas), NULL, path, TRUE))
 	{
 		file_ptr io;
 		abort_callback_dummy abort;

@@ -40,3 +40,8 @@ FOOGUIDDECL const GUID g_guid_cfg_safe_mode =
 extern const GUID g_guid_cfg_cui_warning_reported;
 FOOGUIDDECL const GUID g_guid_cfg_cui_warning_reported = 
 { 0xb590089c, 0xe1e0, 0x41e1, { 0x83, 0x44, 0x18, 0x89, 0xc7, 0x8, 0xbe, 0x87 } };
+
+// {208AB7F8-4F89-4577-BA4D-F1E7990D83FD}
+extern const GUID g_guid_mainmenu_help;
+FOOGUIDDECL const GUID g_guid_mainmenu_help = 
+{ 0x208ab7f8, 0x4f89, 0x4577, { 0xba, 0x4d, 0xf1, 0xe7, 0x99, 0xd, 0x83, 0xfd } };

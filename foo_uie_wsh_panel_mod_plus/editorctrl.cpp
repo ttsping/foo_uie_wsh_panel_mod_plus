@@ -2,7 +2,7 @@
 #include "editorctrl.h"
 #include "scintilla_prop_sets.h"
 #include "helpers.h"
-
+#include "resource.h"
 
 const t_style_to_key_table default_style_table[] = 
 {
@@ -1401,7 +1401,8 @@ void CScriptEditorCtrl::ReadAPI()
 		}
 		else
 		{
-			console::formatter() << WSPM_NAME ": Warning: Could not load file " << api_filename;
+			pfc::string8 lang_mod, lang_warning;
+			console::formatter() << load_lang(IDS_WSHM_NAME, lang_mod) << ": " << load_lang(IDS_APIFILE_WARNING, lang_warning) << api_filename;
 		}
 
 		api_filename += strlen(api_filename) + 1;
@@ -1446,15 +1447,16 @@ LRESULT CScriptEditorCtrl::OnContextMenu( UINT uMsg, WPARAM wParam, LPARAM lPara
 	context_menu.CreatePopupMenu();
 
 	bool read_only = !GetReadOnly();
-	AppendMenu(context_menu,(read_only && CanUndo() ? flag_normal : flag_disable), kCmdUndo, _T("Undo"));
-	AppendMenu(context_menu,(read_only && CanRedo() ? flag_normal : flag_disable), kCmdRedo, _T("Redo"));
-	AppendMenu(context_menu,flag_separator,NULL,NULL);
-	AppendMenu(context_menu,(read_only && !GetSelectionEmpty() ? flag_normal : flag_disable),kCmdCut,_T("Cut"));
-	AppendMenu(context_menu,(!GetSelectionEmpty() ? flag_normal : flag_disable),kCmdCopy,_T("Copy"));
-	AppendMenu(context_menu,(read_only && CanPaste() ? flag_normal : flag_disable),kCmdPaste,_T("Paste"));
-	AppendMenu(context_menu,(read_only && !GetSelectionEmpty() ? flag_normal : flag_disable),kCmdDelete,_T("Delete"));
-	AppendMenu(context_menu,flag_separator,NULL,NULL);
-	AppendMenu(context_menu,flag_normal,kCmdSelectAll,_T("Select All"));
+	pfc::string8 lang_item;
+	uAppendMenu(context_menu,(read_only && CanUndo() ? flag_normal : flag_disable), kCmdUndo, load_lang(IDS_EDIT_UNDO, lang_item));
+	uAppendMenu(context_menu,(read_only && CanRedo() ? flag_normal : flag_disable), kCmdRedo, load_lang(IDS_EDIT_REDO, lang_item));
+	uAppendMenu(context_menu,flag_separator,NULL,NULL);
+	uAppendMenu(context_menu,(read_only && !GetSelectionEmpty() ? flag_normal : flag_disable),kCmdCut, load_lang(IDS_EDIT_CUT, lang_item));
+	uAppendMenu(context_menu,(!GetSelectionEmpty() ? flag_normal : flag_disable),kCmdCopy, load_lang(IDS_EDIT_COPY, lang_item));
+	uAppendMenu(context_menu,(read_only && CanPaste() ? flag_normal : flag_disable),kCmdPaste, load_lang(IDS_EDIT_PASTE, lang_item));
+	uAppendMenu(context_menu,(read_only && !GetSelectionEmpty() ? flag_normal : flag_disable),kCmdDelete, load_lang(IDS_EDIT_DELETE, lang_item));
+	uAppendMenu(context_menu,flag_separator,NULL,NULL);
+	uAppendMenu(context_menu,flag_normal,kCmdSelectAll, load_lang(IDS_EDIT_SELECTALL, lang_item));
 	
 	//outline menu
 	CMenu outline_menu;
@@ -1463,10 +1465,10 @@ LRESULT CScriptEditorCtrl::OnContextMenu( UINT uMsg, WPARAM wParam, LPARAM lPara
 	BOOL fold_enable = (strcmp("1",buf) == 0);
 	if (fold_enable){
 		outline_menu.CreateMenu();
-		AppendMenu(context_menu,flag_separator,NULL,NULL);
-		AppendMenu(outline_menu,flag_normal,kCmdOutliningToggle,_T("Toggle Outlining Expansion"));
-		AppendMenu(outline_menu,flag_normal,kCmdOutliningToggleAll,_T("Toggle All Outlining"));
-		AppendMenu(context_menu,flag_submenu,(UINT_PTR)outline_menu.m_hMenu,_T("Outlining"));
+		uAppendMenu(context_menu,flag_separator,NULL,NULL);
+		uAppendMenu(outline_menu,flag_normal,kCmdOutliningToggle, load_lang(IDS_EDIT_TOGGLE_OUTLINE, lang_item));
+		uAppendMenu(outline_menu,flag_normal,kCmdOutliningToggleAll, load_lang(IDS_EDIT_TOGGLE_OUTLINE_ALL, lang_item));
+		uAppendMenu(context_menu,flag_submenu,(UINT_PTR)outline_menu.m_hMenu, load_lang(IDS_EDIT_TOGGLE, lang_item));
 	}
 	
 	cmd = context_menu.TrackPopupMenu(TPM_RIGHTBUTTON | TPM_NONOTIFY | TPM_RETURNCMD,point.x,point.y,m_hWnd);

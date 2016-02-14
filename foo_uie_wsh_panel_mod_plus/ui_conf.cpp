@@ -24,8 +24,8 @@ LRESULT CDialogConf::OnInitDialog(HWND hwndFocus, LPARAM lParam)
 	SetIcon(icon, FALSE);
 
 	// Save caption text
-	m_caption = WSPM_NAME " Configuration";
-
+	pfc::string8 lang_text;
+	m_caption << load_lang(IDS_WSHM_NAME, lang_text) << " " << load_lang(IDS_UI_CONF, lang_text);
 	//Create Split Window
 	const DWORD ctrl_style = WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
 	const DWORD ctrl_exstyle = WS_EX_STATICEDGE /*WS_EX_CLIENTEDGE*/;
@@ -71,10 +71,13 @@ LRESULT CDialogConf::OnInitDialog(HWND hwndFocus, LPARAM lParam)
 	// Edge Style
 	HWND combo_edge_style = GetDlgItem(IDC_EDGE_STYLE);
 
-	ComboBox_AddString(combo_edge_style, _T("None"));    // NO_EDGE
-	ComboBox_AddString(combo_edge_style, _T("Sunken"));  // SUNKEN_EDGE
-	ComboBox_AddString(combo_edge_style, _T("Grey"));    // GREY_EDGE
+	pfc::string8 lang_style;
+	uSendMessageText(combo_edge_style, CB_ADDSTRING, 0, load_lang(IDS_EDGE_STYLE_NONE, lang_style));
+	uSendMessageText(combo_edge_style, CB_ADDSTRING, 0, load_lang(IDS_EDGE_STYLE_SUNKEN, lang_style));
+	uSendMessageText(combo_edge_style, CB_ADDSTRING, 0, load_lang(IDS_EDGE_STYLE_GREY, lang_style));
 	ComboBox_SetCurSel(combo_edge_style, m_parent->get_edge_style());
+
+	
 
 	// Edit box
 	pfc::string8_fast text;
@@ -131,7 +134,8 @@ LRESULT CDialogConf::OnCloseCmd(WORD wNotifyCode, WORD wID, HWND hWndCtl)
 		if (m_editorctrl.GetModify())
 		{
 			// Prompt?
-			int ret = uMessageBox(m_hWnd, "Do you want to apply your changes?", m_caption, MB_ICONWARNING | MB_SETFOREGROUND | MB_YESNOCANCEL);
+			pfc::string8 lang_prompt;
+			int ret = uMessageBox(m_hWnd, load_lang(IDS_SCRIPT_CHANGE_TIP, lang_prompt), m_caption, MB_ICONWARNING | MB_SETFOREGROUND | MB_YESNOCANCEL);
 
 			switch (ret)
 			{
@@ -161,6 +165,7 @@ LRESULT CDialogConf::OnScriptEngineCbnSelEndOk(WORD wNotifyCode, WORD wID, HWND 
 	if (uComboBox_GetText(combo, cursel, text))
 	{
 		m_editorctrl.SetLanguage(text);
+		m_editorctrl.SendMessage(OCM_COMMAND,MAKEWPARAM(m_editorctrl.GetDlgCtrlID(),SCEN_CHANGE));
 	}
 
 	return 0;
@@ -186,9 +191,9 @@ void CDialogConf::OnResetCurrent()
 
 void CDialogConf::OnImport()
 {
-	pfc::string8 filename;
+	pfc::string8 filename, lang_filetype, lang_import;
 
-	if (uGetOpenFileName(m_hWnd, "Text files|*.txt|JScript files|*.js|All files|*.*", 0, "txt", "Import from", NULL, filename, FALSE))
+	if (uGetOpenFileName(m_hWnd, load_lang(IDS_IMPORT_FILE_TYPE, lang_filetype), 0, "txt", load_lang(IDS_IMPORT_IMPORT, lang_import), NULL, filename, FALSE))
 	{
 		// Open file
 		pfc::string8_fast text;
@@ -200,9 +205,9 @@ void CDialogConf::OnImport()
 
 void CDialogConf::OnExport()
 {
-	pfc::string8 filename;
+	pfc::string8 filename, lang_filetype, lang_saveas;
 
-	if (uGetOpenFileName(m_hWnd, "Text files|*.txt|All files|*.*", 0, "txt", "Save as", NULL, filename, TRUE))
+	if (uGetOpenFileName(m_hWnd, load_lang(IDS_IMPORT_FILE_TYPE, lang_filetype), 0, "txt", load_lang(IDS_IMPORT_SAVE_AS, lang_saveas), NULL, filename, TRUE))
 	{
 		int len = m_editorctrl.GetTextLength();
 		pfc::string8_fast text;
@@ -235,12 +240,12 @@ LRESULT CDialogConf::OnTools(WORD wNotifyCode, WORD wID, HWND hWndCtl)
 	int ret = 0;
 	int flags = TPM_RIGHTBUTTON | TPM_NONOTIFY | TPM_RETURNCMD;
 	RECT rc = {0};
-
-	AppendMenu(menu, MF_STRING, kImport, _T("&Import"));
-	AppendMenu(menu, MF_STRING, kExport, _T("E&xport"));
-	AppendMenu(menu, MF_SEPARATOR, 0, 0);
-	AppendMenu(menu, MF_STRING, kResetDefault, _T("Reset &Default"));
-	AppendMenu(menu, MF_STRING, kResetCurrent, _T("Reset &Current"));
+	pfc::string8 lang_menu;
+	uAppendMenu(menu, MF_STRING, kImport, load_lang(IDS_TOOL_MENU_IMPORT, lang_menu));
+	uAppendMenu(menu, MF_STRING, kExport, load_lang(IDS_TOOL_MENU_EXPORT, lang_menu));
+	uAppendMenu(menu, MF_SEPARATOR, 0, 0);
+	uAppendMenu(menu, MF_STRING, kResetDefault, load_lang(IDS_TOOL_MENU_RESET_DEFAULT, lang_menu));
+	uAppendMenu(menu, MF_STRING, kResetCurrent, load_lang(IDS_TOOL_MENU_RESET_CURRENT, lang_menu));
 
 	::GetWindowRect(::GetDlgItem(m_hWnd, IDC_TOOLS), &rc);
 
@@ -471,7 +476,9 @@ bool CDialogConf::FindResult(HWND hWnd, HWND hWndEdit, int pos, const char *whic
         return true;
     }
 
-    pfc::string8 buff = "Cannot find \"";
+    pfc::string8 buff;
+	load_lang(IDS_MSG_CANNT_FIND, buff);
+	buff += " \"";
     buff += which;
     buff += "\"";
     uMessageBox(hWnd, buff.get_ptr(), WSPM_NAME, MB_ICONINFORMATION | MB_SETFOREGROUND);
@@ -509,7 +516,8 @@ void CDialogConf::OnShowConsolePane( UINT uNotifyCode, int nID, CWindow wndCtl )
 {
 	bool show_pane = uButton_GetCheck(m_hWnd,IDC_SHOW_CONSOLE_PANE);
 	m_split_wnd.SetSinglePaneMode( show_pane ? SPLIT_PANE_NONE : SPLIT_PANE_TOP);
-	uSetWindowText(GetDlgItem(IDC_TOOLS), show_pane ? "Clear" : "Tools");
+	pfc::string8 lang_caption;
+	uSetWindowText(GetDlgItem(IDC_TOOLS), show_pane ? load_lang(IDS_CAPTION_CLEAR, lang_caption) : load_lang(IDS_CAPTION_TOOL, lang_caption));
 }
 
 

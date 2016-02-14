@@ -4,7 +4,119 @@
 #include "wsh_playlist_misc.h"
 #include "helpers.h"
 #include "com_array.h"
+#include "process_locations.h"
 
+STDMETHODIMP FbPlaylistManager::ShowAutoPlaylistUI(UINT idx, VARIANT_BOOL * p)
+{
+	TRACK_FUNCTION();
+
+	*p = VARIANT_TRUE;
+	static_api_ptr_t<autoplaylist_manager> manager;
+
+	try
+	{
+		if (manager->is_client_present(idx))
+		{
+			autoplaylist_client_ptr client = manager->query_client(idx);
+			client->show_ui(idx);
+		}
+	}
+	catch (...)
+	{
+		*p = VARIANT_FALSE;
+	}
+
+	return S_OK;
+}
+
+STDMETHODIMP FbPlaylistManager::CreateAutoPlaylist(UINT idx, BSTR name, BSTR query, BSTR sort, UINT flags, UINT * p)
+{
+	TRACK_FUNCTION();
+
+	if (!name || !query) return E_INVALIDARG;
+	if (!p) return E_POINTER;
+
+	UINT pos = 0;
+	HRESULT hr = CreatePlaylist(idx, name, &pos);
+
+	if (FAILED(hr)) return hr;
+
+	pfc::stringcvt::string_utf8_from_wide wquery(query);
+	pfc::stringcvt::string_utf8_from_wide wsort(sort);
+
+	try
+	{
+		*p = pos;
+		static_api_ptr_t<autoplaylist_manager>()->add_client_simple(wquery, wsort, pos, flags);
+	}
+	catch (...)
+	{
+		*p = pfc_infinite;
+	}
+
+	return S_OK;
+}
+
+STDMETHODIMP FbPlaylistManager::AddLocations(UINT playlistIndex, VARIANT locations, VARIANT_BOOL select)
+{
+	TRACK_FUNCTION();
+	
+	bool toSelect = (select == VARIANT_TRUE);
+	helpers::com_array_reader helper;
+
+	if (!helper.convert(&locations)) return E_INVALIDARG;
+	pfc::list_t<pfc::string8> locations2;
+
+	for (long i = 0; i < static_cast<long>(helper.get_count()); ++i)
+	{
+		_variant_t varUrl;
+
+		helper.get_item(i, varUrl);
+
+		if (FAILED(VariantChangeType(&varUrl, &varUrl, 0, VT_BSTR))) return E_INVALIDARG;
+
+		locations2.add_item(pfc::string8(pfc::stringcvt::string_utf8_from_wide(varUrl.bstrVal)));
+	}
+
+	pfc::list_const_array_t<const char*, pfc::list_t<pfc::string8> > locations3(locations2, locations2.get_count());
+
+	static_api_ptr_t<playlist_incoming_item_filter_v2>()->process_locations_async(
+		locations3,
+		playlist_incoming_item_filter_v2::op_flag_background,
+		NULL,
+		NULL,
+		NULL,
+		new service_impl_t<js_process_locations>(playlistIndex, toSelect));
+
+	return S_OK;
+}
+
+STDMETHODIMP FbPlaylistManager::IsAutoPlaylist(UINT idx, VARIANT_BOOL * p)
+{
+	TRACK_FUNCTION();
+
+	if (!p) return E_POINTER;
+
+	try
+	{
+		*p = TO_VARIANT_BOOL(static_api_ptr_t<autoplaylist_manager>()->is_client_present(idx));
+	}
+	catch (...)
+	{
+		*p = VARIANT_FALSE;
+	}
+
+	return S_OK;
+}
+
+STDMETHODIMP FbPlaylistManager::ClearPlaylist(UINT playlistIndex)
+{
+	TRACK_FUNCTION();
+
+	static_api_ptr_t<playlist_manager>()->playlist_clear(playlistIndex);
+	
+	return S_OK;
+}
 
 STDMETHODIMP FbPlaylistMangerTemplate::InsertPlaylistItems(UINT playlistIndex, UINT base, __interface IFbMetadbHandleList * handles, VARIANT_BOOL select, UINT * outSize)
 {
@@ -689,6 +801,12 @@ STDMETHODIMP FbPlaylistMangerTemplate::IsPlaylistLocked( UINT playlistIndex , VA
 	return S_OK;
 }
 
+STDMETHODIMP FbPlaylistMangerTemplate::UndoBackup( UINT playlistIndex )
+{
+	static_api_ptr_t<playlist_manager>()->playlist_undo_backup(playlistIndex);
+	return S_OK;
+}
+
 STDMETHODIMP FbPlaylistManager::InsertPlaylistItems(UINT playlistIndex, UINT base, __interface IFbMetadbHandleList * handles, VARIANT_BOOL select, UINT * outSize)
 {
     TRACK_FUNCTION();
@@ -958,6 +1076,11 @@ STDMETHODIMP FbPlaylistManager::PlaylistUnLock( UINT playlistIndex )
 STDMETHODIMP FbPlaylistManager::IsPlaylistLocked( UINT playlistIndex , VARIANT_BOOL * outIsLocked )
 {
 	return FbPlaylistMangerTemplate::IsPlaylistLocked(playlistIndex,outIsLocked);
+}
+
+STDMETHODIMP FbPlaylistManager::UndoBackup( UINT playlistIndex )
+{
+	return FbPlaylistMangerTemplate::UndoBackup(playlistIndex);
 }
 
 FbPlaybackQueueItem::FbPlaybackQueueItem(const t_playback_queue_item & playbackQueueItem)

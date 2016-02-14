@@ -5,7 +5,9 @@
 #include "panel_manager.h"
 #include "user_message.h"
 #include "version.h"
-
+#include "wsh_mainmenu.h"
+#include "resource.h"
+#include "lang.h"
 
 // Script TypeLib
 ITypeLibPtr g_typelib;
@@ -29,7 +31,7 @@ namespace
 		"CPropertyList - A Property List control\n"
 		"Copyright (c) 2001-2003 Bjarke Viksoe\n\n\n"
 	);
-
+	
 	//VALIDATE_COMPONENT_FILENAME(WSPM_DLL_NAME);
 
 	// Is there anything not correctly loaded?
@@ -64,35 +66,50 @@ namespace
 		void check_error() 
 		{
 			// Check and show error message
-			pfc::string8 err_msg;
+			pfc::string8 err_msg, lang_msg;
 
 			if (IS_EXPIRED(__DATE__))
 			{
-				err_msg = "This beta version is over two weeks old, please get a new one now.\nVisit: http://foo-wsh-panel-mod.googlecode.com\n\n";
+				err_msg = load_lang(IDS_WSHM_BETA_EXPIRED, lang_msg);
 			}
 			else if (g_load_status != E_OK)
 			{
-				err_msg = "This error message indicates that means this component will not function properly:\n\n";
+				err_msg = load_lang(IDS_WSHM_ERROR, lang_msg);
 
 				if (g_load_status & E_OLE)
-					err_msg += "OLE: Initialize OLE Failed.\n\n";
+					err_msg += load_lang(IDS_WSHM_ERROR_OLE, lang_msg);
 
 				if (g_load_status & E_TYPELIB)
-					err_msg += "Type Library: Load TypeLib Failed.\n\n";
+					err_msg += load_lang(IDS_WSHM_ERROR_TYPELIB, lang_msg);
 
 				if (g_load_status & E_SCINTILLA)
-					err_msg += "Scintilla: Load Scintilla Failed.\n\n";
+					err_msg += load_lang(IDS_WSHM_ERROR_SCINTILLA, lang_msg);
 
 				if (g_load_status & E_GDIPLUS)
-					err_msg += "Gdiplus: Load Gdiplus Failed.\n\n";
+					err_msg += load_lang(IDS_WSHM_ERROR_GDIPLUS, lang_msg);
 			}
 
 			if (!err_msg.is_empty())
-				popup_msg::g_show(err_msg, WSPM_NAME, popup_message::icon_error);
+				popup_msg::g_show(err_msg, load_lang(IDS_WSHM_NAME, lang_msg), popup_message::icon_error);
 		}
 	};
 
 	static initquit_factory_t<wsh_initquit> g_initquit;
+
+	class wsh_init_stage : public init_stage_callback
+	{
+	public:
+		virtual void on_init_stage(t_uint32 stage)
+		{
+			if (stage == init_stages::before_ui_init)
+			{
+				set_ui_language(get_ui_language());
+			}
+		}
+	};
+
+	static initquit_factory_t<wsh_init_stage> g_init_stage;
+
 	CAppModule _Module;
 
 	extern "C" BOOL WINAPI DllMain(HINSTANCE ins, DWORD reason, LPVOID lp)
@@ -149,3 +166,4 @@ namespace
 	}
 
 }
+

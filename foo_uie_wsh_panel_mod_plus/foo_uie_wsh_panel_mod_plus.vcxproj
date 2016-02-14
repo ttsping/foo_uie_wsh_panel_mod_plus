@@ -51,8 +51,8 @@
     <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
     <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
-    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:\foo_uie_wsh_panel_mod\wtl;..\scintilla\include;$(IncludePath)</IncludePath>
-    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\scintilla\include;$(IncludePath)</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\scintilla\include;..\..\wtl;$(IncludePath)</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\scintilla\include;..\..\wtl;$(IncludePath)</IncludePath>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">foo_uie_wsh_panel_mod_plus</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">foo_uie_wsh_panel_mod_plus</TargetName>
     <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</IgnoreImportLibrary>
@@ -82,8 +82,8 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(TargetPath)" "C:\Program Files\Foobar2000\components"
-copy "$(SolutionDir)extras\*.api" "C:\Program Files\Foobar2000\components"</Command>
+      <Command>copy "$(TargetPath)" "C:\Users\ohyeah\Desktop\foobar2000\components"
+copy "$(SolutionDir)extras\*.api" "C:\Users\ohyeah\Desktop\foobar2000\components"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -103,7 +103,8 @@ copy "$(SolutionDir)extras\*.api" "C:\Program Files\Foobar2000\components"</Comm
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <DisableSpecificWarnings>4995;4996</DisableSpecificWarnings>
+      <DisableSpecificWarnings>
+      </DisableSpecificWarnings>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0409</Culture>
@@ -112,7 +113,7 @@ copy "$(SolutionDir)extras\*.api" "C:\Program Files\Foobar2000\components"</Comm
       <AdditionalDependencies>GdiPlus.lib;shared.lib;shlwapi.lib;WinMM.lib;Imm32.lib;uxtheme.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../shared;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <DelayLoadDLLs>%(DelayLoadDLLs)</DelayLoadDLLs>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -120,8 +121,8 @@ copy "$(SolutionDir)extras\*.api" "C:\Program Files\Foobar2000\components"</Comm
       <IgnoreSpecificDefaultLibraries>MSVCRT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(TargetPath)" "C:\Program Files\Foobar2000\components"
-copy "$(SolutionDir)extras\*.api" "C:\Program Files\Foobar2000\components"</Command>
+      <Command>copy "$(TargetPath)" "C:\Users\ohyeah\Desktop\foobar2000\components"
+copy "$(SolutionDir)extras\*.api" "C:\Users\ohyeah\Desktop\foobar2000\components"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -134,6 +135,7 @@ copy "$(SolutionDir)extras\*.api" "C:\Program Files\Foobar2000\components"</Comm
     <ClCompile Include="global_cfg.cpp" />
     <ClCompile Include="host.cpp" />
     <ClCompile Include="input_box.cpp" />
+    <ClCompile Include="lang.cpp" />
     <ClCompile Include="script_callback_invoker.cpp" />
     <ClCompile Include="host_droptarget.cpp" />
     <ClCompile Include="host_timer_dispatcher.cpp" />
@@ -175,6 +177,7 @@ copy "$(SolutionDir)extras\*.api" "C:\Program Files\Foobar2000\components"</Comm
     <ClInclude Include="dbgtrace.h" />
     <ClInclude Include="delay_loader.h" />
     <ClInclude Include="input_box.h" />
+    <ClInclude Include="lang.h" />
     <ClInclude Include="panel_tooltip_param.h" />
     <ClInclude Include="script_callback_invoker.h" />
     <ClInclude Include="host_timer_dispatcher.h" />
@@ -187,6 +190,7 @@ copy "$(SolutionDir)extras\*.api" "C:\Program Files\Foobar2000\components"</Comm
     <ClInclude Include="IDropTargetImpl.h" />
     <ClInclude Include="host_droptarget.h" />
     <ClInclude Include="splitter_window.h" />
+    <ClInclude Include="wsh_mainmenu.h" />
     <ClInclude Include="wsh_panel_window.h" />
     <ClInclude Include="wsh_panel_window_dui.h" />
     <ClInclude Include="wsh_panel_window_cui.h" />
@@ -240,6 +244,7 @@ copy "$(SolutionDir)extras\*.api" "C:\Program Files\Foobar2000\components"</Comm
   <ItemGroup>
     <ClCompile Include="IDataObjectImpl.cpp" />
     <None Include="res\default.js" />
+    <None Include="res\default_cn.js" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="res\resource.rc" />

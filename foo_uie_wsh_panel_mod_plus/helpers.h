@@ -144,6 +144,13 @@ namespace helpers
 		BOOL bRet = ::GetVersionEx(&ovi);
 		return ((bRet != FALSE) && (ovi.dwMajorVersion >= 6));
 	}
+	
+	inline bool is_win8()
+	{
+		OSVERSIONINFO ovi = { sizeof(OSVERSIONINFO) };
+		BOOL bRet = ::GetVersionEx(&ovi);
+		return ((bRet != FALSE) && ((ovi.dwMajorVersion > 6) || (ovi.dwMajorVersion == 6 && ovi.dwMinorVersion > 1)));
+	}
 
 	HRESULT get_remote_text(const service_ptr_t<http_request> client, const char* url, pfc::string_base& p_out);
 
@@ -183,6 +190,8 @@ namespace helpers
 	bool read_file_wide(unsigned codepage, const wchar_t * path, pfc::array_t<wchar_t> & content);
 	// Always save as UTF8 BOM
 	bool write_file(const char * path, const pfc::string_base & content);
+
+	void uSPrintf(pfc::string_base& p_out, const char* p_fmt, ...);
 
 	class file_info_pairs_filter : public file_info_filter
 	{

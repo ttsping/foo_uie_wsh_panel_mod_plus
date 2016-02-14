@@ -2,7 +2,7 @@
 #include "config.h"
 #include "script_preprocessor.h"
 #include "helpers.h"
-
+#include "resource.h"
 
 HRESULT script_preprocessor::process_import(const t_script_info & info, t_script_list & scripts)
 {
@@ -22,19 +22,20 @@ HRESULT script_preprocessor::process_import(const t_script_info & info, t_script
 			pfc::array_t<wchar_t> code;
 			bool success = helpers::read_file_wide(CP_ACP, val.value.get_ptr(), code);
 			pfc::string_formatter msg;
+			pfc::string8 lang_msg;
 
             if (!success)
             {
                 msg << "Error: ";
             }
 
-			msg << WSPM_NAME " (" << info.build_info_string() << "): "
-				<< "Parsing file \"" << pfc::stringcvt::string_utf8_from_wide(val.value.get_ptr())
+			msg << load_lang(IDS_WSHM_NAME, lang_msg) << " (" << info.build_info_string() << "): "
+				<< load_lang(IDS_ERROR_PARSE_FILE, lang_msg) << "\"" << pfc::stringcvt::string_utf8_from_wide(val.value.get_ptr())
 				<< "\"";
 
 			if (!success)
 			{
-				msg << ": Failed to load";
+				msg << ": " << load_lang(IDS_ERROR_FAIL_LOAD, lang_msg);
 			}
 
 			console::formatter() << msg;
@@ -405,4 +406,8 @@ void script_preprocessor::parse_directive_feature(pfc::string_simple &value, t_s
     {
         info.feature_mask |= t_script_info::kFeatureDragDrop;
     }
+	else if (strcmp(str, "layedwindow") == 0 && helpers::is_win8())
+	{
+		info.feature_mask |= t_script_info::kFeatureLayedWindow;
+	}
 }

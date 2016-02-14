@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "input_box.h"
-
+#include "resource.h"
 
 HWND input_box::create_window( HINSTANCE hInst )
 {
@@ -99,9 +99,10 @@ int CALLBACK input_box::wnd_proc( HWND hwnd, UINT msg, WPARAM wp, LPARAM lp )
 		break;
 	case WM_CREATE:
 		{
+			pfc::string8 lang_text;
 			m_hedit = ::CreateWindowEx(0,_T("Static"),m_prompt.c_str(),WS_CHILD | WS_VISIBLE,5,5,275,70,hwnd,(HMENU)1000,m_hinst,0);
-			m_hbtnok = ::CreateWindowEx(0,_T("Button"),_T("OK(&O)"),WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON,285,5,65,20,hwnd,(HMENU)IDOK,m_hinst,0);
-			m_hbtncancel = ::CreateWindowEx(0,_T("Button"),_T("Cancel(&C)"),WS_CHILD | WS_VISIBLE,285,30,65,20,hwnd,(HMENU)IDCANCEL,m_hinst,0);
+			m_hbtnok = uCreateWindowEx(0, "Button", load_lang(IDS_OK, lang_text), WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON, 285, 5, 65, 20, hwnd, (HMENU)IDOK, m_hinst, NULL);
+			m_hbtncancel = uCreateWindowEx(0,"Button",load_lang(IDS_CANCEL, lang_text),WS_CHILD | WS_VISIBLE,285,30,65,20,hwnd,(HMENU)IDCANCEL,m_hinst,0);
 			m_hedit = ::CreateWindowEx(WS_EX_CLIENTEDGE,_T("Edit"),m_defval.c_str(),m_editstyle,5,80,350,20,hwnd,(HMENU)2000,m_hinst,0);
 			
 			HFONT hfont = (HFONT)GetStockObject(DEFAULT_GUI_FONT);

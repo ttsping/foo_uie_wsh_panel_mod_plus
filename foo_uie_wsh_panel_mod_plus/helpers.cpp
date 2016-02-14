@@ -1141,6 +1141,16 @@ namespace helpers
 		SendMessage(m_notify_hwnd, CALLBACK_UWM_HTTPRUNASYNCDONE, 0, (LPARAM)&param);
 	}
 
-	
+	void uSPrintf( pfc::string_base& p_out, const char* p_fmt, ... )
+	{
+		PFC_ASSERT(p_fmt);
+		enum { MAX_BUF = 2048, };
+		char buf[MAX_BUF] = { 0 };
+		va_list ap;
+		va_start(ap, p_fmt);
+		vsprintf_s(buf, p_fmt, ap);
+		va_end(ap);
+		p_out.set_string(buf);
+	}
 
 }

@@ -2,7 +2,7 @@
 #include "wsh_panel_window.h"
 #include "wsh_panel_window_cui.h"
 #include "popup_msg.h"
-
+#include "resource.h"
 
 // CUI panel instance
 static uie::window_factory<wsh_panel_window_cui> g_wsh_panel_wndow_cui;
@@ -15,12 +15,12 @@ const GUID& wsh_panel_window_cui::get_extension_guid() const
 
 void wsh_panel_window_cui::get_name(pfc::string_base& out) const
 {
-    out = WSPM_NAME;
+    load_lang(IDS_WSHM_NAME, out);
 }
 
 void wsh_panel_window_cui::get_category(pfc::string_base& out) const
 {
-    out = "Panels";
+    load_lang(IDS_PANELS, out);
 }
 
 unsigned wsh_panel_window_cui::get_type() const
@@ -62,23 +62,21 @@ LRESULT wsh_panel_window_cui::on_message(HWND hwnd, UINT msg, WPARAM wp, LPARAM 
         {
             // Using in Default UI and dockable panels without Columns UI installed?
             static bool g_reported = false;
-            const char warning[] = "Warning: At least one " WSPM_NAME " instance is running in CUI containers "
-                "(dockable panels, Func UI, etc) without some services provided by the "
-                "Columns UI component (have not been installed or have a very old "
-                "version installed?).\n"
-                "Please download and install the latest version of Columns UI:\n"
-                "http://yuo.be/columns.php";
+			pfc::string8 msg, lang_warning, lang_mod;
+			load_lang(IDS_CUI_WARNING, lang_warning);
+			load_lang(IDS_WSHM_NAME, lang_mod);
+
+			helpers::uSPrintf(msg, lang_warning, lang_mod.get_ptr());
 
             if (!g_cfg_cui_warning_reported)
             {
-                popup_msg::g_show(pfc::string_formatter(warning) << "\n\n[This popup message will be shown only once]", 
-                    WSPM_NAME);
+                 popup_msg::g_show(msg, lang_mod);
 
                 g_cfg_cui_warning_reported = true;
             }
             else if (!g_reported)
             {
-                console::formatter() << "\n" WSPM_NAME ": " << warning << "\n\n";
+                console::formatter() << "\n" << lang_mod << ": " << msg << "\n\n";
                 g_reported = true;
             }
         }

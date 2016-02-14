@@ -782,7 +782,7 @@ STDMETHODIMP GdiGraphics::DrawImage(IGdiBitmap* image, float dstX, float dstY, f
     return S_OK;
 }
 
-STDMETHODIMP GdiGraphics::GdiDrawBitmap(IGdiRawBitmap * bitmap, int dstX, int dstY, int dstW, int dstH, int srcX, int srcY, int srcW, int srcH)
+STDMETHODIMP GdiGraphics::GdiDrawBitmap(IGdiRawBitmap * bitmap, int dstX, int dstY, int dstW, int dstH, int srcX, int srcY, int srcW, int srcH, float angle)
 {
     TRACK_FUNCTION();
 
@@ -795,6 +795,24 @@ STDMETHODIMP GdiGraphics::GdiDrawBitmap(IGdiRawBitmap * bitmap, int dstX, int ds
 
     HDC dc = m_ptr->GetHDC();
 
+	bool transform = !!(BOOL)angle;
+	int gr_mode = 0;
+
+	if (transform)
+	{
+		gr_mode = ::SetGraphicsMode(dc, GM_ADVANCED);
+		POINT pt = { dstX + dstW/2 , dstY + dstH/2 };
+		XFORM xform;
+		angle = (float)(angle / 180. * 3.1415926);  
+		xform.eM11 = (float)cos(angle);  
+		xform.eM12 = (float)sin(angle);  
+		xform.eM21 = (float)-sin(angle);  
+		xform.eM22 = (float)cos(angle);  
+		xform.eDx = (float)(pt.x - cos(angle)*pt.x + sin(angle)*pt.y);  
+		xform.eDy = (float)(pt.y - cos(angle)*pt.y - sin(angle)*pt.x);  
+		SetWorldTransform(dc, &xform);
+	}
+	
     if (dstW == srcW && dstH == srcH)
     {
         BitBlt(dc, dstX, dstY, dstW, dstH, src_dc, srcX, srcY, SRCCOPY);
@@ -805,6 +823,20 @@ STDMETHODIMP GdiGraphics::GdiDrawBitmap(IGdiRawBitmap * bitmap, int dstX, int ds
         SetBrushOrgEx(dc, 0, 0, NULL);
         StretchBlt(dc, dstX, dstY, dstW, dstH, src_dc, srcX, srcY, srcW, srcH, SRCCOPY);
     }
+
+	if (transform)
+	{
+		XFORM xform;  
+		xform.eM11 = (float)1.0;   
+		xform.eM12 = (float)0;  
+		xform.eM21 = (float)0;  
+		xform.eM22 = (float)1.0;  
+		xform.eDx = (float)0;  
+		xform.eDy = (float)0;  
+
+		SetWorldTransform(dc, &xform);  
+		SetGraphicsMode(dc, gr_mode); 
+	}
 
     m_ptr->ReleaseHDC(dc);
     return S_OK;
@@ -1213,7 +1245,7 @@ STDMETHODIMP GdiUtils::RemoveFontResEx( BSTR path, VARIANT_BOOL fl, UINT * p )
 	return S_OK;
 }
 
-STDMETHODIMP GdiUtils::CreatePrivateFontCollection( IPrivateFontCollection** pp )
+STDMETHODIMP GdiUtils::CreatePrivateFontCollection(IPrivateFontCollection** pp )
 {
 	TRACK_FUNCTION();
 
@@ -1558,7 +1590,9 @@ STDMETHODIMP FbMetadbHandle::UpdateFileInfo(IFbFileInfo * fileinfo, VARIANT_BOOL
     fileinfo->get__ptr((void**)&info_ptr);
     if (!info_ptr) return E_INVALIDARG;
 
-    PRINT_OBSOLETE_MESSAGE_ONCE("UpdateFileInfo() is now obsolete, please use UpdateFileInfoSimple() instead.");
+	pfc::string8 msg, lang_msg;
+	helpers::uSPrintf(msg, load_lang(IDS_OBSOLETE_MSG, lang_msg), "UpdateFileInfo()", "UpdateFileInfoSimple()");
+    PRINT_OBSOLETE_MESSAGE_ONCE(msg);
 
     io->update_info_async_simple(pfc::list_single_ref_t<metadb_handle_ptr>(m_handle),
         pfc::list_single_ref_t<const file_info *>(info_ptr),
@@ -1656,6 +1690,175 @@ STDMETHODIMP FbMetadbHandle::Compare(IFbMetadbHandle * handle, VARIANT_BOOL * p)
     }
 
     return S_OK;
+}
+
+STDMETHODIMP FbMetadbHandleList::UpdateFileInfoSimple(SAFEARRAY * p)
+{
+	TRACK_FUNCTION();
+
+	if (m_handles.get_count() == 0) return E_POINTER;
+	if (!p) return E_INVALIDARG;
+
+	helpers::file_info_pairs_filter::t_field_value_map field_value_map;
+	pfc::stringcvt::string_utf8_from_wide ufield, uvalue, umultival;
+	HRESULT hr;
+	LONG nLBound = 0, nUBound = -1;
+	LONG nCount;
+
+	if (FAILED(hr = SafeArrayGetLBound(p, 1, &nLBound)))
+		return hr;
+
+	if (FAILED(hr = SafeArrayGetUBound(p, 1, &nUBound)))
+		return hr;
+
+	nCount = nUBound - nLBound + 1;
+
+	if (nCount < 2)
+		return DISP_E_BADPARAMCOUNT;
+
+	// Enum every two elems
+	for (LONG i = nLBound; i < nUBound; i += 2)
+	{
+		_variant_t var_field, var_value;
+		LONG n1 = i;
+		LONG n2 = i + 1;
+
+		if (FAILED(hr = SafeArrayGetElement(p, &n1, &var_field)))
+			return hr;
+
+		if (FAILED(hr = SafeArrayGetElement(p, &n2, &var_value)))
+			return hr;
+
+		if (FAILED(hr = VariantChangeType(&var_field, &var_field, 0, VT_BSTR)))
+			return hr;
+
+		if (FAILED(hr = VariantChangeType(&var_value, &var_value, 0, VT_BSTR)))
+			return hr;
+
+		ufield.convert(var_field.bstrVal);
+		uvalue.convert(var_value.bstrVal);
+
+		field_value_map[ufield] = uvalue;
+	}
+
+	// Get multivalue fields
+	if (nCount % 2 != 0)
+	{
+		_variant_t var_multival;
+		LONG n = nUBound;
+
+		if (FAILED(hr = SafeArrayGetElement(p, &n, &var_multival)))
+			return hr;
+
+		if (FAILED(hr = VariantChangeType(&var_multival, &var_multival, 0, VT_BSTR)))
+			return hr;
+
+		umultival.convert(var_multival.bstrVal);
+	}
+
+	static_api_ptr_t<metadb_io_v2> io;
+	pfc::list_t<file_info_impl> info;
+	info.set_size(m_handles.get_count());
+	metadb_handle_ptr item;
+	t_filestats p_stats = filestats_invalid;
+
+	for (int i = 0; i < (int)m_handles.get_count(); i++) {
+		item = m_handles.get_item(i);
+		item->get_info(info[i]);
+
+		helpers::file_info_pairs_filter * item_filters = new service_impl_t<helpers::file_info_pairs_filter>(m_handles[i], field_value_map, umultival);
+		item_filters->apply_filter(m_handles[i], p_stats, info[i]);
+	}
+
+	io->update_info_async_simple(
+		m_handles,
+		pfc::ptr_list_const_array_t<const file_info, file_info_impl *>(info.get_ptr(), info.get_count()),
+		core_api::get_main_window(), metadb_io_v2::op_flag_delay_ui | metadb_io_v2::op_flag_partial_info_aware , NULL
+		);
+
+	return S_OK;
+}
+
+STDMETHODIMP FbMetadbHandleList::UpdateFileInfoArray(VARIANT metasArray)
+{
+	TRACK_FUNCTION();
+
+	if (m_handles.get_count() == 0) return E_POINTER;
+
+	helpers::com_array_reader helper;
+	if (!helper.convert(&metasArray)) return E_INVALIDARG;
+
+	helpers::file_info_pairs_filter::t_field_value_map field_value_map;
+	pfc::stringcvt::string_utf8_from_wide ufield, uvalue, umultival;
+	HRESULT hr;
+
+	LONG nCount;
+	nCount = helper.get_count();
+
+	if (nCount < 2)
+		return DISP_E_BADPARAMCOUNT;
+
+	// Enum every two elems
+	for (long i = 0; i < static_cast<long>(helper.get_count()); i += 2)
+	{
+		_variant_t var_field, var_value;
+		LONG n1 = i;
+		LONG n2 = i + 1;
+
+		helper.get_item(n1, var_field);
+		helper.get_item(n2, var_value);
+
+		if (FAILED(hr = VariantChangeType(&var_field, &var_field, 0, VT_BSTR)))
+			return hr;
+
+		if (FAILED(hr = VariantChangeType(&var_value, &var_value, 0, VT_BSTR)))
+			return hr;
+
+		ufield.convert(var_field.bstrVal);
+		uvalue.convert(var_value.bstrVal);
+
+		field_value_map[ufield] = uvalue;
+	}
+
+	// Get multivalue fields
+	if (nCount % 2 != 0)
+	{
+		_variant_t var_multival;
+		LONG n = nCount - 1;
+
+		helper.get_item(n, var_multival);
+
+		if (FAILED(hr = VariantChangeType(&var_multival, &var_multival, 0, VT_BSTR)))
+			return hr;
+
+		umultival.convert(var_multival.bstrVal);
+	}
+
+	static_api_ptr_t<metadb_io_v2> io;
+	pfc::list_t<file_info_impl> info;
+	info.set_size(m_handles.get_count());
+	metadb_handle_ptr item;
+	foobar2000_io::t_filestats null_stats = { 0 };
+
+	for (int i = 0; i < (int)m_handles.get_count(); i++) {
+		item = m_handles.get_item(i);
+		item->get_info(info[i]);
+
+		helpers::file_info_pairs_filter * item_filters = new service_impl_t<helpers::file_info_pairs_filter>(m_handles[i], field_value_map, umultival);
+		item_filters->apply_filter(m_handles[i], null_stats, info[i]);
+	}
+
+	io->update_info_async_simple(
+		m_handles,
+		pfc::ptr_list_const_array_t<const file_info, file_info_impl *>(info.get_ptr(), info.get_count()), // *changed from info to the wrapper object
+		core_api::get_main_window(), metadb_io_v2::op_flag_delay_ui, NULL
+		);
+
+	//io->update_info_async(m_handles, 
+	//new service_impl_t<helpers::file_info_pairs_filter>(m_handles[0], field_value_map, umultival),
+	//core_api::get_main_window(), metadb_io_v2::op_flag_delay_ui, NULL);
+
+	return S_OK;
 }
 
 STDMETHODIMP FbMetadbHandleList::get__ptr(void ** pp)
@@ -1979,6 +2182,21 @@ STDMETHODIMP FbMetadbHandleList::OrderByRelativePath()
     return S_OK;
 }
 
+STDMETHODIMP FbMetadbHandleList::CalcTotalDuration(double* p)
+{
+	TRACK_FUNCTION();
+
+	*p = m_handles.calc_total_duration();
+	return S_OK;
+}
+
+STDMETHODIMP FbMetadbHandleList::CalcTotalSize(double* p)
+{
+	TRACK_FUNCTION();
+
+	*p = static_cast<double>(metadb_handle_list_helper::calc_total_size(m_handles, true));
+	return S_OK;
+}
 
 STDMETHODIMP FbTitleFormat::get__ptr(void ** pp)
 {
@@ -2400,6 +2618,46 @@ STDMETHODIMP FbUtils::Exit()
     return S_OK;
 }
 
+STDMETHODIMP FbUtils::OnTop()
+{
+    TRACK_FUNCTION();
+
+    standard_commands::main_always_on_top();
+    return S_OK;
+}
+
+STDMETHODIMP FbUtils::Hide()
+{
+    TRACK_FUNCTION();
+
+    standard_commands::main_hide();
+    return S_OK;
+}
+
+STDMETHODIMP FbUtils::Restart()
+{
+    TRACK_FUNCTION();
+
+    standard_commands::main_restart();
+    return S_OK;
+}
+
+STDMETHODIMP FbUtils::RemoveDead()
+{
+    TRACK_FUNCTION();
+
+    standard_commands::main_remove_dead_entries();
+    return S_OK;
+}
+
+STDMETHODIMP FbUtils::RemoveDupli()
+{
+    TRACK_FUNCTION();
+
+    standard_commands::main_remove_duplicates();
+    return S_OK;
+}
+
 STDMETHODIMP FbUtils::Play()
 {
     TRACK_FUNCTION();
@@ -2628,6 +2886,24 @@ STDMETHODIMP FbUtils::CreateMainMenuManager(IMainMenuManager ** pp)
 
     (*pp) = new com_object_impl_t<MainMenuManager>();
     return S_OK;
+}
+
+STDMETHODIMP FbUtils::GetLibraryRelativePath(IFbMetadbHandle * handle, BSTR * p)
+{
+	TRACK_FUNCTION();
+
+	if (!handle) return E_INVALIDARG;
+	if (!p) return E_POINTER;
+
+	metadb_handle * ptr = NULL;
+	handle->get__ptr((void**)&ptr);
+
+	pfc::string8_fast temp;
+	static_api_ptr_t<library_manager> api;
+
+	if (!api->get_relative_path(ptr, temp)) temp = "";
+	*p = SysAllocString(pfc::stringcvt::string_wide_from_utf8_fast(temp));
+	return S_OK;
 }
 
 STDMETHODIMP FbUtils::IsMetadbInMediaLibrary(IFbMetadbHandle * handle, VARIANT_BOOL * p)
@@ -2909,6 +3185,53 @@ STDMETHODIMP FbUtils::GetMainMenuCommandStatus( BSTR command , UINT *p )
 	return S_OK;
 }
 
+STDMETHODIMP FbUtils::GetLibraryItems( IFbMetadbHandleList ** pp )
+{
+	return GetAllItemsInMediaLibrary(pp);
+}
+
+STDMETHODIMP FbUtils::ShowLibrarySearchUI(BSTR query_string)
+{
+	pfc::stringcvt::string_utf8_from_wide str(query_string);
+	static_api_ptr_t<library_search_ui>()->show(str);
+	return S_OK;
+}
+
+STDMETHODIMP FbUtils::GetQueryItems(IFbMetadbHandleList * items, BSTR query, IFbMetadbHandleList ** pp)
+{
+	TRACK_FUNCTION();
+
+	if (!pp) return E_POINTER;
+	if (!query) return E_INVALIDARG;
+
+	metadb_handle_list *srclist_ptr, dst_list;
+
+	items->get__ptr((void **)&srclist_ptr);
+
+	dst_list = *srclist_ptr;
+	pfc::stringcvt::string_utf8_from_wide query8(query);
+
+	static_api_ptr_t<search_filter_manager_v2> api;
+	search_filter_v2::ptr filter;
+
+	try
+	{
+		filter = api->create_ex(query8, new service_impl_t<completion_notify_dummy>(), search_filter_manager_v2::KFlagSuppressNotify);
+	}
+	catch (...)
+	{
+		return E_FAIL;
+	}
+
+	pfc::array_t<bool> mask;
+	mask.set_size(dst_list.get_size());
+	filter->test_multi(dst_list, mask.get_ptr());
+	dst_list.filter_mask(mask.get_ptr());
+
+	(*pp) = new com_object_impl_t<FbMetadbHandleList>(dst_list);
+
+	return S_OK;
+}
 
 STDMETHODIMP MenuObj::get_ID(UINT * p)
 {
@@ -2931,7 +3254,9 @@ STDMETHODIMP MenuObj::AppendMenuItem(UINT flags, UINT item_id, BSTR text)
 
     if (flags & MF_POPUP)
     {
-        PRINT_OBSOLETE_MESSAGE_ONCE("Please use AppendTo() method to create sub menu instead of AppendMenuItem()");
+		pfc::string8 msg, lang_msg;
+		helpers::uSPrintf(msg, load_lang(IDS_OBSOLETE_MENU, lang_msg), "AppendTo()", "AppendMenuItem()");
+        PRINT_OBSOLETE_MESSAGE_ONCE(msg);
     }
 
     ::AppendMenu(m_hMenu, flags, item_id, text);
@@ -3176,8 +3501,8 @@ STDMETHODIMP FbProfiler::Reset()
 STDMETHODIMP FbProfiler::Print()
 {
     TRACK_FUNCTION();
-
-    console::formatter() << WSPM_NAME ": FbProfiler (" << m_name << "): " << (int)(m_timer.query() * 1000) << " ms";
+	pfc::string8 lang_mod;
+    console::formatter() << load_lang(IDS_WSHM_NAME, lang_mod) << ": FbProfiler (" << m_name << "): " << (int)(m_timer.query() * 1000) << " ms";
     return S_OK;
 }
 
@@ -3755,6 +4080,32 @@ STDMETHODIMP WSHUtils::FileTest(BSTR path, BSTR mode, VARIANT * p)
     }
 
     return S_OK;
+}
+
+STDMETHODIMP WSHUtils::FormatDuration(double p, BSTR * pp)
+{
+	TRACK_FUNCTION();
+
+	pfc::string8_fast str;
+	
+	str = pfc::format_time_ex(p, 0);
+
+	*pp = SysAllocString(pfc::stringcvt::string_wide_from_utf8_fast(str));
+
+	return S_OK;
+}
+
+STDMETHODIMP WSHUtils::FormatFileSize(double p, BSTR * pp)
+{
+	TRACK_FUNCTION();
+
+	pfc::string8_fast str;
+
+	str = pfc::format_file_size_short((t_uint64)p);
+
+	*pp = SysAllocString(pfc::stringcvt::string_wide_from_utf8_fast(str));
+
+	return S_OK;
 }
 
 STDMETHODIMP WSHUtils::GetWND( BSTR class_name , IWindow** pp )
@@ -4845,6 +5196,11 @@ STDMETHODIMP PrivateFontCollectionObj::AddFont( BSTR path,INT* p )
 	Gdiplus::Status status = m_pfc.AddFontFile(path);
 	if(status!=Gdiplus::Ok)return E_FAIL;
 	*p = m_pfc.GetFamilyCount();
+	if(::AddFontResourceExW(path,FR_PRIVATE,0))
+	{
+		m_font_path.add_item(pfc::stringcvt::string_utf8_from_wide(path));
+	}
+	
 	return S_OK;
 }
 

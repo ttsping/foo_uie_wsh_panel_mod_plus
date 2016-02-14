@@ -7,7 +7,7 @@
 #include "popup_msg.h"
 #include "dbgtrace.h"
 #include "obsolete.h"
-
+#include "resource.h"
 
 HostComm::HostComm() 
 	: m_hwnd(NULL)
@@ -393,7 +393,9 @@ STDMETHODIMP FbWindow::CreateTimerTimeout(UINT timeout, ITimerObj ** pp)
 {
 	TRACK_FUNCTION();
 	if (!pp) return E_POINTER;
-    PRINT_OBSOLETE_MESSAGE_ONCE("window.CreateTimerTimeout() is now obsolete, please use window.SetTimeout() in new script.");
+	pfc::string8 msg, lang_msg, lang_test;
+	helpers::uSPrintf(msg, load_lang(IDS_OBSOLETE_MSG, lang_msg), "window.CreateTimerTimeout()", "window.SetTimeout()");
+    PRINT_OBSOLETE_MESSAGE_ONCE(msg);
 	(*pp) = m_host->CreateTimerTimeout(timeout);
 	return S_OK;
 }
@@ -402,7 +404,9 @@ STDMETHODIMP FbWindow::CreateTimerInterval(UINT delay, ITimerObj ** pp)
 {
 	TRACK_FUNCTION();
 	if (!pp) return E_POINTER;
-    PRINT_OBSOLETE_MESSAGE_ONCE("window.CreateTimerInterval() is now obsolete, please use window.SetInterval() in new script.");
+	pfc::string8 msg, lang_msg;
+	helpers::uSPrintf(msg, load_lang(IDS_OBSOLETE_MSG, lang_msg), "window.CreateTimerInterval()", "window.SetInterval()");
+    PRINT_OBSOLETE_MESSAGE_ONCE(msg);
 	(*pp)= m_host->CreateTimerInterval(delay);
 	return S_OK;
 }
@@ -499,15 +503,17 @@ STDMETHODIMP FbWindow::UnWatchMetadb()
 	return S_OK;
 }
 
-STDMETHODIMP FbWindow::CreateTooltip(IFbTooltip ** pp)
+STDMETHODIMP FbWindow::CreateTooltip(BSTR name, float pxSize, INT style, IFbTooltip ** pp)
 {
 	TRACK_FUNCTION();
 
 	if (!pp) return E_POINTER;
 
-    auto no_background = (m_host->ScriptInfo().tooltip_mask & t_script_info::kTooltipCustomPaintNoBackground) != 0;
-    const auto& tooltip_param = m_host->PanelTooltipParam();
-    (*pp) = new com_object_impl_t<FbTooltip>(m_host->GetHWND(), no_background, tooltip_param);
+	const auto& tooltip_param = m_host->PanelTooltipParam();
+	tooltip_param->font_name = name;
+	tooltip_param->font_size = pxSize;
+	tooltip_param->font_style = style;
+	(*pp) = new com_object_impl_t<FbTooltip>(m_host->GetHWND(), tooltip_param);
 	return S_OK;
 }
 
@@ -714,6 +720,12 @@ STDMETHODIMP FbWindow::CreateThemeManager(BSTR classid, IThemeManager ** pp)
 	}
 
 	*pp = ptheme;
+	return S_OK;
+}
+
+STDMETHODIMP FbWindow::Reload()
+{
+	::PostMessage(m_host->GetHWND(), UWM_SCRIPT_RELOAD, 0, 0);
 	return S_OK;
 }
 
@@ -1041,23 +1053,48 @@ HRESULT ScriptHost::InvokeCallback(int callbackId, VARIANTARG * argv /*= NULL*/,
 	catch (std::exception & e)
 	{
 		pfc::print_guid guid(m_host->get_config_guid());
-		console::printf(WSPM_NAME " (%s): Unhandled C++ Exception: \"%s\", will crash now...", 
-			m_host->ScriptInfo().build_info_string().get_ptr(), e.what());
+		console::formatter msg;
+		pfc::string8 lang_msg;
+		msg << load_lang(IDS_WSHM_NAME, lang_msg)
+			<< " ("
+		    << m_host->ScriptInfo().build_info_string()
+		    << "): "
+			<< load_lang(IDS_EXCEPT_CPP, lang_msg)
+		    << ": \""
+		    << e.what()
+		    << "\", "
+		    << load_lang(IDS_EXCEPT_MSG, lang_msg);
 		PRINT_DISPATCH_TRACK_MESSAGE_AND_BREAK();
 	}
     catch (_com_error & e)
     {
         pfc::print_guid guid(m_host->get_config_guid());
-        console::printf(WSPM_NAME " (%s): Unhandled COM Error: \"%s\", will crash now...", 
-            m_host->ScriptInfo().build_info_string().get_ptr(), 
-            pfc::stringcvt::string_utf8_from_wide(e.ErrorMessage()).get_ptr());
+		console::formatter msg;
+		pfc::string8 lang_msg;
+		msg << load_lang(IDS_WSHM_NAME, lang_msg)
+			<< " ("
+			<< m_host->ScriptInfo().build_info_string()
+			<< "): "
+			<< load_lang(IDS_EXCEPT_COM, lang_msg)
+			<< ": \""
+			<< pfc::stringcvt::string_utf8_from_wide(e.ErrorMessage())
+			<< "\", "
+			<< load_lang(IDS_EXCEPT_MSG, lang_msg);
+        
         PRINT_DISPATCH_TRACK_MESSAGE_AND_BREAK();
     }
 	catch (...)
 	{
 		pfc::print_guid guid(m_host->get_config_guid());
-		console::printf(WSPM_NAME " (%s): Unhandled Unknown Exception, will crash now...", 
-			m_host->ScriptInfo().build_info_string().get_ptr());
+		console::formatter msg;
+		pfc::string8 lang_msg;
+		msg << load_lang(IDS_WSHM_NAME, lang_msg)
+			<< " ("
+			<< m_host->ScriptInfo().build_info_string()
+			<< "): "
+			<< load_lang(IDS_EXCEPT_UNKNOWN, lang_msg)
+			<< ", "
+			<< load_lang(IDS_EXCEPT_MSG, lang_msg);
         PRINT_DISPATCH_TRACK_MESSAGE_AND_BREAK();
 	}
 
@@ -1095,6 +1132,7 @@ void ScriptHost::ReportError(IActiveScriptError* err)
 	//WCHAR buf[512] = { 0 };
 	_bstr_t sourceline;
 	_bstr_t name;
+	pfc::string8 lang_msg;
 
 	if (FAILED(err->GetSourcePosition(&ctx, &line, &charpos)))
 	{
@@ -1104,7 +1142,7 @@ void ScriptHost::ReportError(IActiveScriptError* err)
 
 	if (FAILED(err->GetSourceLineText(sourceline.GetAddress())))
 	{
-		sourceline = L"<source text only available at compile time>";
+		sourceline = pfc::stringcvt::string_wide_from_utf8(load_lang(IDS_SCRIPT_ERROR, lang_msg));
 	}
 
 	if (FAILED(err->GetExceptionInfo(&excep)))
@@ -1116,7 +1154,7 @@ void ScriptHost::ReportError(IActiveScriptError* err)
 
     using namespace pfc::stringcvt;
     pfc::string_formatter formatter;
-    formatter << WSPM_NAME << " (" << m_host->ScriptInfo().build_info_string().get_ptr() << "): ";
+    formatter << load_lang(IDS_WSHM_NAME, lang_msg) << " (" << m_host->ScriptInfo().build_info_string().get_ptr() << "): ";
 
     if (excep.bstrSource && excep.bstrDescription) 
     {
@@ -1130,17 +1168,17 @@ void ScriptHost::ReportError(IActiveScriptError* err)
         if (uFormatSystemErrorMessage(errorMessage, excep.scode))
             formatter << errorMessage;
         else
-            formatter << "Unknown error code: 0x" << pfc::format_hex_lowercase((unsigned)excep.scode);
+            formatter << load_lang(IDS_SCRIPT_ERROR_UNKNOWN, lang_msg) <<": 0x" << pfc::format_hex_lowercase((unsigned)excep.scode);
     }
 
     if (m_contextToPathMap.exists(ctx))
     {
-        formatter << "File: " << m_contextToPathMap[ctx] << "\n";
+        formatter << load_lang(IDS_SCRIPT_ERROR_FILE, lang_msg) << ": " << m_contextToPathMap[ctx] << "\n";
     }
 
-    formatter << "Ln: " << (t_uint32)(line + 1) << ", Col: " << (t_uint32)(charpos + 1) << "\n";
+    formatter << load_lang(IDS_SCRIPT_ERROR_LINE, lang_msg) << ": " << (t_uint32)(line + 1) << ", " << load_lang(IDS_SCRIPT_ERROR_COL, lang_msg) << ": " << (t_uint32)(charpos + 1) << "\n";
     formatter << string_utf8_from_wide(sourceline);
-    if (name.length() > 0) formatter << "\nAt: " << name;
+    if (name.length() > 0) formatter << "\n"<< load_lang(IDS_SCRIPT_ERROR_AT, lang_msg) << ": " << name;
 
     if (excep.bstrSource)      SysFreeString(excep.bstrSource);
     if (excep.bstrDescription) SysFreeString(excep.bstrDescription);

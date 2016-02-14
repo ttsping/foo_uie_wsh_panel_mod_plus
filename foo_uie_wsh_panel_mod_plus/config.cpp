@@ -6,7 +6,7 @@
 void wsh_panel_vars::get_default_script_code(pfc::string_base & out)
 {
 	out.reset();
-	puResource pures = uLoadResource(core_api::get_my_instance(), uMAKEINTRESOURCE(IDR_SCRIPT), "SCRIPT");
+	puResource pures = uLoadResource(core_api::get_my_instance(), uMAKEINTRESOURCE(IDR_SCRIPT), "SCRIPT", (get_ui_language() == t_lang_zh_cn) ? MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED) : MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US));
 
 	if (pures)
 		out.set_string(reinterpret_cast<const char *>(pures->GetPointer()), pures->GetSize());
@@ -87,8 +87,9 @@ void wsh_panel_vars::load_config(stream_reader * reader, t_size size, abort_call
 		if (!have_read_config)
 		{
 			// Configuration corruputed or config version dismatch.
-			console::complain(WSPM_NAME, 
-				"Error: Configuration needs a newer component or is corrupted");
+			pfc::string8 lang_what, lang_msg;
+			console::complain(load_lang(IDS_WSHM_NAME, lang_what), 
+				load_lang(IDS_CONFIG_ERROR, lang_msg));
 		}
 	}
 }

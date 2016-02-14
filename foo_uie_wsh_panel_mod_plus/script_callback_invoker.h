@@ -17,6 +17,7 @@ struct CallbackIds
         on_paint,
         on_timer,
         on_mouse_wheel,
+        on_mouse_wheel_h,
         on_mouse_leave,
         on_mouse_move,
         on_mouse_lbtn_dblclk,

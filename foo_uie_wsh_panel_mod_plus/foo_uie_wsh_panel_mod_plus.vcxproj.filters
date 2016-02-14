@@ -147,6 +147,9 @@
     <ClCompile Include="wsh_playlist_misc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="lang.cpp">
+      <Filter>Source Files\Misc</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="config.h">
@@ -323,9 +326,18 @@
     <ClInclude Include="splitter_window.h">
       <Filter>Header Files\Misc</Filter>
     </ClInclude>
+    <ClInclude Include="wsh_mainmenu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lang.h">
+      <Filter>Header Files\Misc</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="res\default.js">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\default_cn.js">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

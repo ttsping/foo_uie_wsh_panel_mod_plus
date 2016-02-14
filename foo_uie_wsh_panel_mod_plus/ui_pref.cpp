@@ -24,9 +24,10 @@ BOOL CDialogPref::OnInitDialog(HWND hwndFocus, LPARAM lParam)
 
 	// Show Grid lines (XP only)
 	m_props.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | (helpers::is_vista() ? LVS_EX_DOUBLEBUFFER : LVS_EX_GRIDLINES));
-	m_props.AddColumn(_T("Name"), 0);
+	pfc::string8 lang_col;
+	m_props.AddColumn(pfc::stringcvt::string_wide_from_utf8(load_lang(IDS_UI_PROPERTY_NAME, lang_col)), 0);
 	m_props.SetColumnWidth(0, 140);
-	m_props.AddColumn(_T("Value"), 1);
+	m_props.AddColumn(pfc::stringcvt::string_wide_from_utf8(load_lang(IDS_UI_PROPERTY_VALUE, lang_col)), 1);
 	m_props.SetColumnWidth(1, 260);
 	LoadProps();
 
@@ -110,17 +111,17 @@ void CDialogPref::uGetItemText(int nItem, int nSubItem, pfc::string_base & out)
 
 void CDialogPref::OnButtonExportBnClicked(WORD wNotifyCode, WORD wID, HWND hWndCtl)
 {
-	pfc::string8_fast filename;
+	pfc::string8_fast filename, lang_filetype, lang_saveas;
 
-	if (uGetOpenFileName(m_hWnd, "Configuration files|*.cfg", 0, "cfg", "Save as", NULL, filename, TRUE))
+	if (uGetOpenFileName(m_hWnd, load_lang(IDS_CONF_IMPORT_FILETYPE, lang_filetype), 0, "cfg", load_lang(IDS_IMPORT_SAVE_AS, lang_saveas), NULL, filename, TRUE))
 		g_sci_prop_sets.export_to_file(filename);
 }
 
 void CDialogPref::OnButtonImportBnClicked(WORD wNotifyCode, WORD wID, HWND hWndCtl)
 {
-	pfc::string8_fast filename;
+	pfc::string8_fast filename, lang_filetype, lang_import;
 
-	if (uGetOpenFileName(m_hWnd, "Configuration files|*.cfg|All files|*.*", 0, "cfg", "Import from", NULL, filename, FALSE))
+	if (uGetOpenFileName(m_hWnd, load_lang(IDS_CONF_IMPORT_FILETYPE, lang_filetype), 0, "cfg", load_lang(IDS_IMPORT_IMPORT, lang_import), NULL, filename, FALSE))
 		g_sci_prop_sets.import_from_file(filename);
 
 	LoadProps();

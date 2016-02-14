@@ -13,6 +13,8 @@
 __interface IFbPlaylistManager : IDispatch
 {
     // Methods
+    STDMETHOD(ShowAutoPlaylistUI)(UINT idx, [out,retval] VARIANT_BOOL * p);
+    STDMETHOD(AddLocations)(UINT playlistIndex, VARIANT locations, [defaultvalue(0)] VARIANT_BOOL select);
     STDMETHOD(InsertPlaylistItems)(UINT playlistIndex, UINT base, __interface IFbMetadbHandleList * handles, [defaultvalue(0)] VARIANT_BOOL select, [out,retval] UINT * outSize);
     STDMETHOD(InsertPlaylistItemsFilter)(UINT playlistIndex, UINT base, __interface IFbMetadbHandleList * handles, [defaultvalue(0)] VARIANT_BOOL select, [out,retval] UINT * outSize);
     STDMETHOD(MovePlaylistSelection)(UINT playlistIndex, int delta);
@@ -21,12 +23,15 @@ __interface IFbPlaylistManager : IDispatch
     STDMETHOD(GetPlaylistItems)(UINT playlistIndex, [out,retval] __interface IFbMetadbHandleList ** outItems);
     STDMETHOD(SetPlaylistSelectionSingle)(UINT playlistIndex, UINT itemIndex, VARIANT_BOOL state);
     STDMETHOD(SetPlaylistSelection)(UINT playlistIndex, VARIANT affectedItems, VARIANT_BOOL state);
+    STDMETHOD(IsAutoPlaylist)(UINT idx, [out,retval] VARIANT_BOOL * p);
+    STDMETHOD(ClearPlaylist)(UINT playlistIndex);
     STDMETHOD(ClearPlaylistSelection)(UINT playlistIndex);
     STDMETHOD(GetPlaylistFocusItemIndex)(UINT playlistIndex, [out,retval] INT * outPlaylistItemIndex);
     STDMETHOD(GetPlaylistFocusItemHandle)(VARIANT_BOOL force, [out,retval] IFbMetadbHandle ** outItem);
     STDMETHOD(SetPlaylistFocusItem)(UINT playlistIndex, UINT itemIndex);
     STDMETHOD(SetPlaylistFocusItemByHandle)(UINT playlistIndex, IFbMetadbHandle * item);
     STDMETHOD(GetPlaylistName)(UINT playlistIndex, [out,retval] BSTR * outName);
+    STDMETHOD(CreateAutoPlaylist)(UINT idx, BSTR name, BSTR query, [defaultvalue("")] BSTR sort, [defaultvalue(0)]UINT flags, [out,retval] UINT * p);
     STDMETHOD(CreatePlaylist)(UINT playlistIndex, BSTR name, [out,retval] UINT * outPlaylistIndex);
     STDMETHOD(RemovePlaylist)(UINT playlistIndex, [out,retval] VARIANT_BOOL * outSuccess);
     STDMETHOD(MovePlaylist)(UINT from, UINT to, [out,retval] VARIANT_BOOL * outSuccess);
@@ -58,7 +63,8 @@ __interface IFbPlaylistManager : IDispatch
 	STDMETHOD(IsPlaylistLocked)(UINT playlistIndex,[out,retval] VARIANT_BOOL * outIsLocked);
 	STDMETHOD(PlaylistLock)(UINT playlistIndex, UINT flag);
 	STDMETHOD(PlaylistUnLock)(UINT playlistIndex);
-	
+	STDMETHOD(UndoBackup)(UINT playlistIndex);
+
     // Properties
     [propget] STDMETHOD(PlaybackOrder)([out,retval] UINT * outOrder);
     [propput] STDMETHOD(PlaybackOrder)(UINT order);

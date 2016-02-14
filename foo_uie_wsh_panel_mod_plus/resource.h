@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
 // Microsoft Visual C++ generated include file.
-// Used by E:\ÎÒµÄÎÄµµ\source_codes\foo_uie_wsh_panel_mod_plus_v13\foo_uie_wsh_panel_mod_plus\foo_uie_wsh_panel_mod\foo_uie_wsh_panel_mod_plus\res\resource.rc
+// Used by J:\Source\foo_uie_wsh_panel_mod_plus_v13\foo_uie_wsh_panel_mod_plus\foo_uie_wsh_panel_mod\foo_uie_wsh_panel_mod_plus\res\resource.rc
 //
 #define IDD_DIALOG_CONFIG               101
 #define IDR_SCRIPT                      102
@@ -33,7 +33,6 @@
 #define IDC_BUTTON_EXPORT               1021
 #define IDC_LIST_PROPERTIES             1022
 #define IDC_SCRIPT_ENGINE               1023
-//#define IDC_EDIT                        1024
 #define IDC_IMPORT                      1027
 #define IDAPPLY                         1028
 #define IDC_CLEARALL                    1029
@@ -49,12 +48,84 @@
 #define IDC_STATIC_HOLDER               1039
 #define IDC_CONSOLE_PRINT               1040
 #define IDC_SHOW_CONSOLE_PANE           1041
+#define IDS_ELEMENT_GROUP               10000
+#define IDS_WSHM_NAME                   10001
+#define IDS_CONFIG_ERROR                10002
+#define IDS_APIFILE_WARNING             10003
+#define IDS_EDIT_UNDO                   10004
+#define IDS_EDIT_REDO                   10005
+#define IDS_EDIT_CUT                    10006
+#define IDS_EDIT_COPY                   10007
+#define IDS_EDIT_PASTE                  10008
+#define IDS_EDIT_DELETE                 10009
+#define IDS_EDIT_SELECTALL              10010
+#define IDS_EDIT_TOGGLE_OUTLINE         10011
+#define IDS_EDIT_TOGGLE_OUTLINE_ALL     10012
+#define IDS_EDIT_TOGGLE                 10013
+#define IDS_WSHM_COPYRIGHT              10014
+#define IDS_WSHM_BETA_EXPIRED           10015
+#define IDS_WSHM_ERROR                  10016
+#define IDS_WSHM_ERROR_OLE              10017
+#define IDS_WSHM_ERROR_TYPELIB          10018
+#define IDS_WSHM_ERROR_SCINTILLA        10019
+#define IDS_WSHM_ERROR_GDIPLUS          10020
+#define IDS_OBSOLETE_MSG                10021
+#define IDS_EXCEPT_CPP                  10022
+#define IDS_EXCEPT_COM                  10023
+#define IDS_EXCEPT_UNKNOWN              10024
+#define IDS_EXCEPT_MSG                  10025
+#define IDS_SCRIPT_ERROR                10026
+#define IDS_SCRIPT_ERROR_UNKNOWN        10027
+#define IDS_SCRIPT_ERROR_FILE           10028
+#define IDS_SCRIPT_ERROR_LINE           10029
+#define IDS_SCRIPT_ERROR_AT             10030
+#define IDS_SCRIPT_ERROR_COL            10031
+#define IDS_OK                          10032
+#define IDS_CANCEL                      10033
+#define IDS_OBSOLETE_WARNING            10034
+#define IDS_OBSOLETE_MENU               10035
+#define IDS_ERROR                       10036
+#define IDS_ERROR_PARSE_FILE            10037
+#define IDS_ERROR_FAIL_LOAD             10038
+#define IDS_UI_CONF                     10039
+#define IDS_EDGE_STYLE_NONE             10040
+#define IDS_EDGE_STYLE_SUNKEN           10041
+#define IDS_EDGE_STYLE_GREY             10042
+#define IDS_SCRIPT_CHANGE_TIP           10043
+#define IDS_IMPORT_FILE_TYPE            10044
+#define IDS_IMPORT_SAVE_AS              10045
+#define IDS_IMPORT_IMPORT               10046
+#define IDS_TOOL_MENU_IMPORT            10047
+#define IDS_TOOL_MENU_EXPORT            10048
+#define IDS_TOOL_MENU_RESET_DEFAULT     10049
+#define IDS_TOOL_MENU_RESET_CURRENT     10050
+#define IDS_MSG_CANNT_FIND              10051
+#define IDS_CAPTION_TOOL                10052
+#define IDS_CAPTION_CLEAR               10053
+#define IDS_UI_PROPERTY_NAME            10054
+#define IDS_UI_PROPERTY_VALUE           10055
+#define IDS_CONF_IMPORT_FILETYPE        10056
+#define IDS_PROP_IMPORT_FILETYPE        10057
+#define IDS_SCRIPT_ENGINE_INIT_FAILED   10058
+#define IDS_SCRIPT_FAILED_MSG           10059
+#define IDS_SCRIPT_INIT_TIME            10060
+#define IDS_MS                          10061
+#define IDS_PANEL                       10062
+#define IDS_ERROR_LAST_RUN              10063
+#define IDS_SCRIPT_CRASH                10064
+#define IDS_MENU_PROP                   10065
+#define IDS_MENU_CONF                   10066
+#define IDS_MENU_RELOAD                 10067
+#define IDS_PANELS                      10068
+#define IDS_CUI_WARNING                 10069
+#define IDS_DUI_DECRIPTION              10070
+#define IDS_WSHM_DOCS                   10071
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        110
+#define _APS_NEXT_RESOURCE_VALUE        113
 #define _APS_NEXT_COMMAND_VALUE         40012
 #define _APS_NEXT_CONTROL_VALUE         1042
 #define _APS_NEXT_SYMED_VALUE           101

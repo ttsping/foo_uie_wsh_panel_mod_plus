@@ -124,7 +124,7 @@ public:
 	STDMETHODIMP DrawString(BSTR str, IGdiFont* font, VARIANT color, float x, float y, float w, float h, int flags);
 	STDMETHODIMP GdiDrawText(BSTR str, IGdiFont * font, VARIANT color, int x, int y, int w, int h, int format, VARIANT * p);
 	STDMETHODIMP DrawImage(IGdiBitmap* image, float dstX, float dstY, float dstW, float dstH, float srcX, float srcY, float srcW, float srcH, float angle, BYTE alpha);
-	STDMETHODIMP GdiDrawBitmap(IGdiRawBitmap * bitmap, int dstX, int dstY, int dstW, int dstH, int srcX, int srcY, int srcW, int srcH);
+	STDMETHODIMP GdiDrawBitmap(IGdiRawBitmap * bitmap, int dstX, int dstY, int dstW, int dstH, int srcX, int srcY, int srcW, int srcH, float angle);
 	STDMETHODIMP GdiAlphaBlend(IGdiRawBitmap * bitmap, int dstX, int dstY, int dstW, int dstH, int srcX, int srcY, int srcW, int srcH, BYTE alpha);
 	STDMETHODIMP MeasureString(BSTR str, IGdiFont * font, float x, float y, float w, float h, int flags, IMeasureStringInfo ** pp);
 	STDMETHODIMP CalcTextWidth(BSTR str, IGdiFont * font, UINT * p);
@@ -268,6 +268,7 @@ public:
 	STDMETHODIMP GetFileInfo(VARIANT_BOOL force, IFbFileInfo ** pp);
 	STDMETHODIMP UpdateFileInfo(IFbFileInfo * fileinfo, VARIANT_BOOL force);
 	STDMETHODIMP UpdateFileInfoSimple(SAFEARRAY * p);
+	STDMETHODIMP UpdateFileInfoArray(VARIANT metaArray);
 	STDMETHODIMP Compare(IFbMetadbHandle * handle, VARIANT_BOOL * p);
 };
 
@@ -287,18 +288,18 @@ protected:
 
 public:
 	STDMETHODIMP get__ptr(void ** pp);
-    STDMETHODIMP get_Item(UINT index, IFbMetadbHandle ** pp);
-    STDMETHODIMP put_Item(UINT index, IFbMetadbHandle * handle);
+	STDMETHODIMP get_Item(UINT index, IFbMetadbHandle ** pp);
+	STDMETHODIMP put_Item(UINT index, IFbMetadbHandle * handle);
 	STDMETHODIMP get_Count(UINT * p);
 
 	STDMETHODIMP Clone(IFbMetadbHandleList ** pp);
-    STDMETHODIMP Insert(UINT index, IFbMetadbHandle * handle, UINT * outIndex);
-    STDMETHODIMP InsertRange(UINT index, IFbMetadbHandleList * handles, UINT * outIndex);
+	STDMETHODIMP Insert(UINT index, IFbMetadbHandle * handle, UINT * outIndex);
+	STDMETHODIMP InsertRange(UINT index, IFbMetadbHandleList * handles, UINT * outIndex);
 	STDMETHODIMP Add(IFbMetadbHandle * handle, UINT * p);
-    STDMETHODIMP AddRange(IFbMetadbHandleList * handles);
-    STDMETHODIMP RemoveById(UINT index);
+	STDMETHODIMP AddRange(IFbMetadbHandleList * handles);
+	STDMETHODIMP RemoveById(UINT index);
 	STDMETHODIMP Remove(IFbMetadbHandle * handle);
-    STDMETHODIMP RemoveRange(UINT from, UINT count);
+	STDMETHODIMP RemoveRange(UINT from, UINT count);
 	STDMETHODIMP RemoveAll();
 	STDMETHODIMP Sort();
 	STDMETHODIMP Find(IFbMetadbHandle * handle, UINT * p);
@@ -306,9 +307,13 @@ public:
 	STDMETHODIMP MakeIntersection(IFbMetadbHandleList * handles);
 	STDMETHODIMP MakeUnion(IFbMetadbHandleList * handles);
 	STDMETHODIMP MakeDifference(IFbMetadbHandleList * handles);
-    STDMETHODIMP OrderByFormat(__interface IFbTitleFormat * script, int direction);
-    STDMETHODIMP OrderByPath();
-    STDMETHODIMP OrderByRelativePath();
+	STDMETHODIMP OrderByFormat(__interface IFbTitleFormat * script, int direction);
+	STDMETHODIMP OrderByPath();
+	STDMETHODIMP OrderByRelativePath();
+	STDMETHODIMP CalcTotalDuration(double* p);
+	STDMETHODIMP CalcTotalSize(double* p);
+	STDMETHODIMP UpdateFileInfoSimple(SAFEARRAY * p);
+	STDMETHODIMP UpdateFileInfoArray(VARIANT metasArray);
 };
 
 class FbTitleFormat : public IDisposableImpl4<IFbTitleFormat>
@@ -447,6 +452,11 @@ public:
 	STDMETHODIMP put_Volume(float value);
 
 	STDMETHODIMP Exit();
+	STDMETHODIMP OnTop();
+	STDMETHODIMP Hide();
+	STDMETHODIMP Restart();
+	STDMETHODIMP RemoveDead();
+	STDMETHODIMP RemoveDupli();
 	STDMETHODIMP Play();
 	STDMETHODIMP Stop();
 	STDMETHODIMP Pause();
@@ -494,6 +504,10 @@ public:
 	STDMETHODIMP GetAllItemsInMediaLibrary(IFbMetadbHandleList ** pp);
 	STDMETHODIMP QueryMulti(IFbMetadbHandleList * items , BSTR query , IFbMetadbHandleList ** pp);
 	STDMETHODIMP GetMainMenuCommandStatus(BSTR command , UINT *p);
+	STDMETHODIMP GetLibraryItems(IFbMetadbHandleList ** pp);
+	STDMETHODIMP ShowLibrarySearchUI(BSTR query_string);
+	STDMETHODIMP GetLibraryRelativePath(IFbMetadbHandle * handle, BSTR * p);
+	STDMETHODIMP GetQueryItems(IFbMetadbHandleList * items, BSTR query, IFbMetadbHandleList ** pp);
 };
 
 class MenuObj : public IDisposableImpl4<IMenuObj>
@@ -594,6 +608,8 @@ public:
 	STDMETHODIMP CreateHttpRequest(BSTR type, IHttpRequest** pp);
 	STDMETHODIMP GetWindowsVersion(VARIANT * p);
 	STDMETHODIMP PrintPreferencePageGUID();
+	STDMETHODIMP FormatDuration(double p, BSTR * pp);
+	STDMETHODIMP FormatFileSize(double p, BSTR * pp);
 };
 
 // forward declaration
@@ -776,7 +792,12 @@ class PrivateFontCollectionObj : public IDispatchImpl3<IPrivateFontCollection>
 {
 protected:
 	PrivateFontCollectionObj(){}
-	virtual ~PrivateFontCollectionObj(){}
+	virtual ~PrivateFontCollectionObj(){
+		m_font_path.enumerate([](const char* p_path) -> void
+		{
+			::RemoveFontResourceExW(pfc::stringcvt::string_wide_from_utf8(p_path),FR_PRIVATE,0);
+		});
+	}
 public:
 	STDMETHODIMP get_FamilyCount(INT * p);
 
@@ -784,6 +805,7 @@ public:
 	STDMETHODIMP GetFont(BSTR name,float size,int style,IGdiFont** pp);
 private:
 	Gdiplus::PrivateFontCollection m_pfc;
+	pfc::string_list_impl m_font_path;
 };
 
 class HttpRequest : public IDisposableImpl4<IHttpRequest>

@@ -7,6 +7,7 @@
 #include "panel_manager.h"
 #include "popup_msg.h"
 #include "com_array.h"
+#include "resource.h"
 
 wsh_panel_window::wsh_panel_window() :
     m_script_host(new ScriptHost(this)), 
@@ -39,6 +40,8 @@ bool wsh_panel_window::script_load()
     TRACK_FUNCTION();
 
     m_host_timer_dispatcher.setWindow(m_hwnd);
+
+	pfc::string8 lang_msg;
 
     helpers::mm_timer timer;
     bool result = true;
@@ -75,8 +78,9 @@ bool wsh_panel_window::script_load()
         // Format error message
         pfc::string_simple win32_error_msg = format_win32_error(hr);
         pfc::string_formatter msg_formatter;
-
-        msg_formatter << "Scripting Engine Initialization Failed ("
+		
+		msg_formatter << load_lang(IDS_SCRIPT_ENGINE_INIT_FAILED, lang_msg);
+        msg_formatter << " ("
             << ScriptInfo().build_info_string() << ", CODE: 0x" 
             << pfc::format_hex_lowercase((unsigned)hr);
 
@@ -86,15 +90,20 @@ bool wsh_panel_window::script_load()
         }
         else
         {
-            msg_formatter << ")\nCheck the console for more information (Always caused by unexcepted script error).";
+            msg_formatter << ")\n" << load_lang(IDS_SCRIPT_FAILED_MSG, lang_msg);
         }
 
         // Show error message
-        popup_msg::g_show(msg_formatter, WSPM_NAME, popup_message::icon_error);
+        popup_msg::g_show(msg_formatter, load_lang(IDS_WSHM_NAME, lang_msg), popup_message::icon_error);
         result = false;
     }
     else
     {
+		if (ScriptInfo().feature_mask & t_script_info::kFeatureLayedWindow)
+		{
+			SetWindowLongPtr(m_hwnd, GWL_EXSTYLE, GetWindowLongPtr(m_hwnd, GWL_EXSTYLE) | WS_EX_LAYERED);
+		}
+
         if (ScriptInfo().feature_mask & t_script_info::kFeatureDragDrop)
         {
             // Ole Drag and Drop support
@@ -109,9 +118,11 @@ bool wsh_panel_window::script_load()
         // Show init message
         console::formatter() << WSPM_NAME " (" 
             << ScriptInfo().build_info_string()
-            << "): initialized in "
+            << "): "
+			<< load_lang(IDS_SCRIPT_INIT_TIME, lang_msg)
+			<< " "
             << (int)(timer.query() * 1000)
-            << " ms";
+            << load_lang(IDS_MS, lang_msg);
     }
 
     return result;
@@ -349,6 +360,10 @@ LRESULT wsh_panel_window::on_message(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
         on_mouse_wheel(wp);
         break;
 
+    case WM_MOUSEHWHEEL:
+        on_mouse_wheel_h(wp);
+        break;
+
     case WM_SETCURSOR:
         return 1;
 
@@ -440,13 +455,17 @@ LRESULT wsh_panel_window::on_message(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 
     case UWM_SCRIPT_DISABLED_BEFORE:
         // Show error message
-        popup_msg::g_show(pfc::string_formatter() 
-            << "Panel ("
-            << ScriptInfo().build_info_string()
-            << "): Refuse to load script due to critical error last run,"
-            << " please check your script and apply it again.",
-            WSPM_NAME, 
-            popup_message::icon_error);
+		{
+			pfc::string8 lang_msg, lang_title;
+			popup_msg::g_show(pfc::string_formatter()
+				<< load_lang(IDS_PANEL, lang_msg)
+				<< " ("
+				<< ScriptInfo().build_info_string()
+				<< "): "
+				<< load_lang(IDS_ERROR_LAST_RUN, lang_msg),
+				load_lang(IDS_WSHM_NAME, lang_title), 
+				popup_message::icon_error);
+		}
         return 0;
 
     case UWM_TIMER:
@@ -464,6 +483,11 @@ LRESULT wsh_panel_window::on_message(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
     case UWM_SHOWPROPERTIES:
         show_property_popup(m_hwnd);
         return 0;
+
+	case UWM_SCRIPT_RELOAD:
+		script_unload();
+		script_load();
+		return 0;
 
     case CALLBACK_UWM_PLAYLIST_STOP_AFTER_CURRENT:
         on_playlist_stop_after_current_changed(wp);
@@ -656,7 +680,21 @@ void wsh_panel_window::on_paint(HDC dc, LPRECT lpUpdateRect)
         on_paint_user(memdc, lpUpdateRect);
     }
 
-    BitBlt(dc, 0, 0, m_width, m_height, memdc, 0, 0, SRCCOPY);
+	if (ScriptInfo().feature_mask & t_script_info::kFeatureLayedWindow)
+	{
+		BLENDFUNCTION blend = { AC_SRC_OVER, 0, 255, AC_SRC_ALPHA };
+		RECT rect;
+		GetWindowRect(m_hwnd, &rect);
+		POINT dest = { rect.left, rect.top };
+		POINT src = { 0 };
+		SIZE bitmap_size = { m_width, m_height };
+		UpdateLayeredWindow(m_hwnd, dc, &dest, &bitmap_size, memdc, &src, 0, &blend, ULW_ALPHA);
+	}
+	else
+	{
+		BitBlt(dc, 0, 0, m_width, m_height, memdc, 0, 0, SRCCOPY);
+	}
+    
     SelectBitmap(memdc, oldbmp);
     DeleteDC(memdc);
 }
@@ -690,7 +728,7 @@ void wsh_panel_window::on_paint_user(HDC memdc, LPRECT lpUpdateRect)
 
 void wsh_panel_window::on_paint_error(HDC memdc)
 {
-    const TCHAR errmsg[] = _T("Aw, crashed :(");
+	pfc::string8 errmsg;
     RECT rc = {0, 0, m_width, m_height};
     SIZE sz = {0};
 
@@ -709,7 +747,8 @@ void wsh_panel_window::on_paint_error(HDC memdc)
         SetBkMode(memdc, TRANSPARENT);
 
         SetTextColor(memdc, RGB(255, 255, 255));
-        DrawText(memdc, errmsg, -1, &rc, DT_CENTER | DT_VCENTER | DT_NOPREFIX | DT_SINGLELINE);
+
+        DrawText(memdc, pfc::stringcvt::string_wide_from_utf8(load_lang(IDS_SCRIPT_CRASH, errmsg)), -1, &rc, DT_CENTER | DT_VCENTER | DT_NOPREFIX | DT_SINGLELINE);
 
         DeleteObject(hBack);
     }
@@ -749,6 +788,17 @@ void wsh_panel_window::on_mouse_wheel(WPARAM wp)
     args[0].vt = VT_I4;
     args[0].lVal = GET_WHEEL_DELTA_WPARAM(wp) / WHEEL_DELTA;
     script_invoke_v(CallbackIds::on_mouse_wheel, args, _countof(args));
+}
+
+void wsh_panel_window::on_mouse_wheel_h(WPARAM wp)
+{
+	TRACK_FUNCTION();
+
+	VARIANTARG args[1];
+
+	args[0].vt = VT_I4;
+	args[0].lVal = GET_WHEEL_DELTA_WPARAM(wp) / WHEEL_DELTA;
+	script_invoke_v(CallbackIds::on_mouse_wheel_h, args, _countof(args));
 }
 
 void wsh_panel_window::on_mouse_leave()
@@ -1020,10 +1070,11 @@ void wsh_panel_window::on_refresh_background_done()
 
 void wsh_panel_window::build_context_menu(HMENU menu, int x, int y, int id_base)
 {
-    ::AppendMenu(menu, MF_STRING, id_base + 1, _T("&Properties"));
-    ::AppendMenu(menu, MF_STRING, id_base + 2, _T("&Configure..."));
-	::AppendMenu(menu, MF_SEPARATOR , NULL , NULL);
-	::AppendMenu(menu, MF_STRING, id_base + 3, _T("Reload &Script"));
+	pfc::string8 lang_menu;
+    uAppendMenu(menu, MF_STRING, id_base + 1, load_lang(IDS_MENU_PROP, lang_menu));
+    uAppendMenu(menu, MF_STRING, id_base + 2, load_lang(IDS_MENU_CONF, lang_menu));
+	uAppendMenu(menu, MF_SEPARATOR , NULL , NULL);
+	uAppendMenu(menu, MF_STRING, id_base + 3, load_lang(IDS_MENU_RELOAD, lang_menu));
 }
 
 void wsh_panel_window::execute_context_menu_command(int id, int id_base)

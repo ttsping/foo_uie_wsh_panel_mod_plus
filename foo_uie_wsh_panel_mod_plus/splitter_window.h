@@ -1,6 +1,6 @@
 #pragma once
 
-class wsh_splitter_window : public CSplitterWindowImpl<wsh_splitter_window,false>
+class wsh_splitter_window : public CHorSplitterWindow
 {
 public:
 	DECLARE_WND_CLASS(_T("WSH_SplitterWindow"));

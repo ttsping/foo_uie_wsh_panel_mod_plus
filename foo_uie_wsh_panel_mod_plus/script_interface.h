@@ -133,7 +133,7 @@ __interface IGdiGraphics: IGdiObj
 	STDMETHOD(DrawString)(BSTR str, IGdiFont* font, VARIANT color, float x, float y, float w, float h, [defaultvalue(0)] int flags);
 	STDMETHOD(GdiDrawText)(BSTR str, IGdiFont * font, VARIANT color, int x, int y, int w, int h, [defaultvalue(0)] int format, [out,retval] VARIANT * p);
 	STDMETHOD(DrawImage)(IGdiBitmap* image, float dstX, float dstY, float dstW, float dstH, float srcX, float srcY, float srcW, float srcH, [defaultvalue(0.0)]float angle, [defaultvalue(255)]BYTE alpha);
-	STDMETHOD(GdiDrawBitmap)(IGdiRawBitmap * bitmap, int dstX, int dstY, int dstW, int dstH, int srcX, int srcY, int srcW, int srcH);
+	STDMETHOD(GdiDrawBitmap)(IGdiRawBitmap * bitmap, int dstX, int dstY, int dstW, int dstH, int srcX, int srcY, int srcW, int srcH, [defaultvalue(0.0)]float angle);
 	STDMETHOD(GdiAlphaBlend)(IGdiRawBitmap * bitmap, int dstX, int dstY, int dstW, int dstH, int srcX, int srcY, int srcW, int srcH, [defaultvalue(255)]BYTE alpha);
 	//STDMETHOD(GdiTransparentBlt)(IGdiRawBitmap * bitmap, int dstX, int dstY, int dstW, int dstH, int srcX, int srcY, int srcW, int srcH, VARIANT color);
 	STDMETHOD(MeasureString)(BSTR str, IGdiFont * font, float x, float y, float w, float h, [defaultvalue(0)] int flags, [out,retval] IMeasureStringInfo ** pp);
@@ -268,7 +268,7 @@ __interface IFbMetadbHandleList: IDisposable
     STDMETHOD(AddRange)(IFbMetadbHandleList * handles);
 	STDMETHOD(RemoveById)(UINT index);
 	STDMETHOD(Remove)(IFbMetadbHandle * handle);
-    STDMETHOD(RemoveRange)(UINT from, UINT count);
+	STDMETHOD(RemoveRange)(UINT from, UINT count);
 	STDMETHOD(RemoveAll)();
 	STDMETHOD(Sort)();
 	STDMETHOD(Find)(IFbMetadbHandle * handle, [out,retval] UINT * p);
@@ -276,9 +276,13 @@ __interface IFbMetadbHandleList: IDisposable
 	STDMETHOD(MakeIntersection)(IFbMetadbHandleList * handles);
 	STDMETHOD(MakeUnion)(IFbMetadbHandleList * handles);
 	STDMETHOD(MakeDifference)(IFbMetadbHandleList * handles);
-    STDMETHOD(OrderByFormat)(__interface IFbTitleFormat * script, int direction);
-    STDMETHOD(OrderByPath)();
-    STDMETHOD(OrderByRelativePath)();
+	STDMETHOD(OrderByFormat)(__interface IFbTitleFormat * script, int direction);
+	STDMETHOD(OrderByPath)();
+	STDMETHOD(OrderByRelativePath)();
+	STDMETHOD(CalcTotalDuration)([out,retval] double* p);
+	STDMETHOD(CalcTotalSize)([out,retval] double* p);
+	[vararg] STDMETHOD(UpdateFileInfoSimple)([satype(VARIANT)] SAFEARRAY * p);
+	STDMETHOD(UpdateFileInfoArray)(VARIANT affectedItems);
 };
 
 [
@@ -412,6 +416,11 @@ __interface IFbUtils: IDispatch
 	[propput] STDMETHOD(Volume)(float value);
 	//
 	STDMETHOD(Exit)();
+	STDMETHOD(OnTop)();
+	STDMETHOD(Hide)();
+	STDMETHOD(Restart)();
+	STDMETHOD(RemoveDead)();
+	STDMETHOD(RemoveDupli)();
 	STDMETHOD(Play)();
 	STDMETHOD(Stop)();
 	STDMETHOD(Pause)();
@@ -459,7 +468,12 @@ __interface IFbUtils: IDispatch
 	STDMETHOD(IsMediaLibraryEnabled)([out,retval] VARIANT_BOOL * p);
 	STDMETHOD(GetAllItemsInMediaLibrary)([out,retval] IFbMetadbHandleList ** pp);
 	STDMETHOD(QueryMulti)(IFbMetadbHandleList * items , BSTR query , [out,retval] IFbMetadbHandleList ** pp);
-	STDMETHOD(GetMainMenuCommandStatus)(BSTR command , [out,retval] UINT *p);
+	STDMETHOD(GetMainMenuCommandStatus)(BSTR command, [out,retval] UINT *p);
+	STDMETHOD(GetLibraryItems)([out,retval] IFbMetadbHandleList ** pp);
+	STDMETHOD(ShowLibrarySearchUI)([defaultvalue("")] BSTR query_string);
+	STDMETHOD(GetLibraryRelativePath)(IFbMetadbHandle * handle, [out,retval] BSTR * p);
+	STDMETHOD(GetQueryItems)(IFbMetadbHandleList * items, BSTR query, [out, retval] IFbMetadbHandleList ** pp);
+	
 };
 _COM_SMARTPTR_TYPEDEF(IFbUtils, __uuidof(IFbUtils));
 
@@ -544,14 +558,14 @@ __interface IFbWindow: IDispatch
 	STDMETHOD(CreateTimerTimeout)(UINT timeout, [out,retval] ITimerObj ** pp);
 	STDMETHOD(CreateTimerInterval)(UINT delay, [out,retval] ITimerObj ** pp);
 	STDMETHOD(KillTimer)(ITimerObj * p);
-    STDMETHOD(SetInterval)(IDispatch * func, INT delay, [out,retval] UINT * outIntervalID);
-    STDMETHOD(ClearInterval)(UINT intervalID);
-    STDMETHOD(SetTimeout)(IDispatch * func, INT delay, [out,retval] UINT * outTimeoutID);
-    STDMETHOD(ClearTimeout)(UINT timeoutID);
+	STDMETHOD(SetInterval)(IDispatch * func, INT delay, [out,retval] UINT * outIntervalID);
+	STDMETHOD(ClearInterval)(UINT intervalID);
+	STDMETHOD(SetTimeout)(IDispatch * func, INT delay, [out,retval] UINT * outTimeoutID);
+	STDMETHOD(ClearTimeout)(UINT timeoutID);
 	STDMETHOD(NotifyOthers)(BSTR name, VARIANT info);
 	STDMETHOD(WatchMetadb)(IFbMetadbHandle * handle);
 	STDMETHOD(UnWatchMetadb)();
-	STDMETHOD(CreateTooltip)([out,retval] __interface IFbTooltip ** pp);
+	STDMETHOD(CreateTooltip)([defaultvalue("Segoe UI")] BSTR name, [defaultvalue(12)] float pxSize, [defaultvalue(0)] INT style, [out,retval] __interface IFbTooltip ** pp);
 	STDMETHOD(ShowConfigure)();
 	STDMETHOD(ShowProperties)();
 	STDMETHOD(GetProperty)(BSTR name, [optional] VARIANT defaultval, [out,retval] VARIANT * p);
@@ -563,6 +577,8 @@ __interface IFbWindow: IDispatch
 	STDMETHOD(GetColorDUI)(UINT type, [out,retval] int * p);
 	STDMETHOD(GetFontDUI)(UINT type, [out,retval] IGdiFont ** pp);
 	STDMETHOD(CreateThemeManager)(BSTR classid, [out,retval] IThemeManager ** pp);
+
+	STDMETHOD(Reload)();
 };
 _COM_SMARTPTR_TYPEDEF(IFbWindow, __uuidof(IFbWindow));
 
@@ -616,6 +632,8 @@ __interface IWSHUtils: IDispatch
 	STDMETHOD(CreateHttpRequest)(BSTR type,[out,retval]__interface IHttpRequest** pp);
 	STDMETHOD(GetWindowsVersion)([out,retval] VARIANT * p);
 	STDMETHOD(PrintPreferencePageGUID)();
+	STDMETHOD(FormatDuration)(double p, [out,retval] BSTR * pp);
+	STDMETHOD(FormatFileSize)(double p, [out,retval] BSTR * pp);
 };
 _COM_SMARTPTR_TYPEDEF(IWSHUtils, __uuidof(IWSHUtils));
 
