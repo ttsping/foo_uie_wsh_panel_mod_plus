@@ -468,12 +468,18 @@ public:
 		CDCHandle dc(di.hDC);
 		COLORREF bkColor = m_val.intVal;
 		HBRUSH hBrush = CreateSolidBrush(bkColor);
+		HBRUSH hBorderBrush = CreateSolidBrush(RGB(150, 150, 150));
 		RECT rc;
 		::CopyRect(&rc, &di.rcItem);
 		//rc.left = di.rcItem.left + (di.rcItem.right - di.rcItem.left)/3;
 		rc.right = di.rcItem.left + /*2 **/ (di.rcItem.right - di.rcItem.left)/3;
+		
 		dc.FillRect(&rc, hBrush);
+
+		rc.bottom -= 1;
+		dc.FrameRect(&rc, hBorderBrush);
 		DeleteObject(hBrush);
+		DeleteObject(hBorderBrush);
 	}
 };
 /////////////////////////////////////////////////////////////////////////////
