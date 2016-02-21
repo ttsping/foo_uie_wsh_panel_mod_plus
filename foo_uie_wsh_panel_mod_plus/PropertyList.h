@@ -393,6 +393,7 @@ public:
 			switch (bKind)
 			{
 			case PROPKIND_CONTROL:
+			case PROPKIND_COLOR:
 				::DestroyWindow(hwndInplace);
 				break;
 			default:
@@ -461,9 +462,9 @@ public:
 		MESSAGE_HANDLER(WM_USER_PROP_UPDATEPROPERTY, OnUpdateProperty);
 		MESSAGE_HANDLER(WM_USER_PROP_CANCELPROPERTY, OnCancelProperty);
 		MESSAGE_HANDLER(WM_USER_PROP_CHANGEDPROPERTY, OnChangedProperty);
-		REFLECTED_COMMAND_CODE_HANDLER(LBN_SELCHANGE, OnSelChange)
-			CHAIN_MSG_MAP_ALT(COwnerDraw<T>, 1)
-			DEFAULT_REFLECTION_HANDLER()
+		REFLECTED_COMMAND_CODE_HANDLER(LBN_SELCHANGE, OnSelChange);
+	CHAIN_MSG_MAP_ALT(COwnerDraw<T>, 1)
+		REFLECT_NOTIFICATIONS();
 	END_MSG_MAP()
 
 	LRESULT OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& /*bHandled*/)
@@ -814,7 +815,7 @@ public:
 		}
 		void MeasureItem(LPMEASUREITEMSTRUCT lpMIS)
 		{
-			lpMIS->itemHeight = m_di.tmText.tmHeight + 3;
+			lpMIS->itemHeight = m_di.tmText.tmHeight + 5;
 		}
 		void DrawItem(LPDRAWITEMSTRUCT lpDIS)
 		{

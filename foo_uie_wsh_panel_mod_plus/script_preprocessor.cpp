@@ -406,8 +406,4 @@ void script_preprocessor::parse_directive_feature(pfc::string_simple &value, t_s
     {
         info.feature_mask |= t_script_info::kFeatureDragDrop;
     }
-	else if (strcmp(str, "layedwindow") == 0 && helpers::is_win8())
-	{
-		info.feature_mask |= t_script_info::kFeatureLayedWindow;
-	}
 }

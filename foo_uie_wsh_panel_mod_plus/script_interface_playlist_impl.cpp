@@ -5,6 +5,7 @@
 #include "helpers.h"
 #include "com_array.h"
 #include "process_locations.h"
+#include "resource.h"
 
 STDMETHODIMP FbPlaylistManager::ShowAutoPlaylistUI(UINT idx, VARIANT_BOOL * p)
 {
@@ -287,15 +288,31 @@ STDMETHODIMP FbPlaylistMangerTemplate::CreatePlaylist(UINT playlistIndex, BSTR n
     if (!name) return E_INVALIDARG;
     if (!outPlaylistIndex) return E_POINTER;
 
+	static_api_ptr_t<playlist_manager> api;
+
     if (*name)
     {
         pfc::stringcvt::string_utf8_from_wide uname(name);
 
-        *outPlaylistIndex = static_api_ptr_t<playlist_manager>()->create_playlist(uname, uname.length(), playlistIndex);
+        *outPlaylistIndex = api->create_playlist(uname, uname.length(), playlistIndex);
     }
     else
     {
-        *outPlaylistIndex = static_api_ptr_t<playlist_manager>()->create_playlist_autoname(playlistIndex);
+		pfc::string8 new_playlist_text;
+		load_lang(IDS_NEW_PLAYLIST_NAME, new_playlist_text);
+		if (api->find_playlist(new_playlist_text,pfc_infinite) == pfc_infinite) {
+			*outPlaylistIndex = api->create_playlist(new_playlist_text,pfc_infinite, playlistIndex);
+		}
+		else{
+			for(t_size walk = 2; ; walk++) {
+				pfc::string_fixed_t<64> namebuffer;
+				namebuffer << new_playlist_text << " (" << walk << ")";
+				if (api->find_playlist(namebuffer,pfc_infinite) == pfc_infinite) {
+					*outPlaylistIndex = api->create_playlist(namebuffer,pfc_infinite,playlistIndex);
+					break;
+				}
+			}
+		}
     }
 
     return S_OK;

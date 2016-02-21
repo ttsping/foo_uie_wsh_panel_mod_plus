@@ -35,6 +35,7 @@
 #define PIN_CLICK               (PIN_FIRST-4)
 #define PIN_DBLCLICK            (PIN_FIRST-5)
 #define PIN_ADDITEM             (PIN_FIRST-6)
+#define PIN_BROWSE				(PIN_FIRST-7)
 
 // Identifiers returned by GetKind()
 #define PROPKIND_SIMPLE     0x0002
@@ -42,9 +43,13 @@
 #define PROPKIND_LIST       0x0004
 #define PROPKIND_BOOL       0x0005
 #define PROPKIND_CONTROL    0x0006
+#define PROPKIND_COLOR		0x0007
+#define PROPKIND_FILENAME	0x0008
+#define PROPKIND_FOLDERNAME	0x0009
 
 // Activate actions
 #define PACT_ACTIVATE       0x0001
+#define PACT_BROWSE			0x0002
 #define PACT_CLICK          0x0003
 #define PACT_DBLCLICK       0x0004
 #define PACT_TAB            0x0005

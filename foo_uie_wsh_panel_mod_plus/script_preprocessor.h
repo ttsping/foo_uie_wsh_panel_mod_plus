@@ -28,7 +28,6 @@ struct t_script_info
 	{
 		kFeatureMetadbHandleList0	=	1 << 0,
 		kFeatureDragDrop			=	1 << 1,
-		kFeatureLayedWindow         =   1 << 2,
 		kFeatureNoWatchMetadb		=	1 << 7,
 	};
 

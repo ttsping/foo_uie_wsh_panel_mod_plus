@@ -150,18 +150,18 @@ public:
 
 	BEGIN_MSG_MAP(thisClass)
 		CHAIN_MSG_MAP(themeClass)
-		MESSAGE_HANDLER(WM_CREATE, OnCreate)
-		MESSAGE_HANDLER(WM_SETFOCUS, OnSetFocus)
-		MESSAGE_HANDLER(WM_KILLFOCUS, OnKillFocus)
-		MESSAGE_HANDLER(WM_KEYDOWN, OnKeyDown)
-		MESSAGE_HANDLER(WM_CHAR, OnChar)
-		MESSAGE_HANDLER(WM_LBUTTONDOWN, OnMouseButtonClick)
-		MESSAGE_HANDLER(WM_RBUTTONDOWN, OnMouseButtonClick)
-		MESSAGE_HANDLER(WM_GETDLGCODE, OnGetDlgCode)
-		REFLECT_NOTIFICATIONS()
-		ALT_MSG_MAP(1) // Button
-		MESSAGE_HANDLER(WM_KEYDOWN, OnButtonKeyDown)
-		MESSAGE_HANDLER(WM_GETDLGCODE, OnGetDlgCode)
+ 		MESSAGE_HANDLER(WM_CREATE, OnCreate)
+ 		MESSAGE_HANDLER(WM_SETFOCUS, OnSetFocus)
+ 		MESSAGE_HANDLER(WM_KILLFOCUS, OnKillFocus)
+  		MESSAGE_HANDLER(WM_KEYDOWN, OnKeyDown)
+  		MESSAGE_HANDLER(WM_CHAR, OnChar)
+ 		MESSAGE_HANDLER(WM_LBUTTONDOWN, OnMouseButtonClick)
+  		MESSAGE_HANDLER(WM_RBUTTONDOWN, OnMouseButtonClick)
+ 		MESSAGE_HANDLER(WM_GETDLGCODE, OnGetDlgCode)
+ 		REFLECT_NOTIFICATIONS()
+ 	ALT_MSG_MAP(1) // Button
+ 		MESSAGE_HANDLER(WM_KEYDOWN, OnButtonKeyDown)
+ 		MESSAGE_HANDLER(WM_GETDLGCODE, OnGetDlgCode)
 	END_MSG_MAP()
 
 	LRESULT OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& /*bHandled*/)
@@ -172,20 +172,20 @@ public:
 		int cy = rcClient.bottom - rcClient.top;
 		// Setup EDIT control
 		SetFont(CWindow(GetParent()).GetFont());
-		ModifyStyle(WS_BORDER, ES_LEFT);
-		SendMessage(EM_SETMARGINS, EC_LEFTMARGIN | EC_RIGHTMARGIN, MAKELONG(PROP_TEXT_INDENT, ::GetSystemMetrics(SM_CXVSCROLL)));
+		SendMessage(EM_SETMARGINS, EC_LEFTMARGIN | EC_RIGHTMARGIN, MAKELONG(PROP_TEXT_INDENT, cy + 2/*::GetSystemMetrics(SM_CXVSCROLL)*/));
 		// Create button
-		RECT rcButton = { rcClient.right - cy, rcClient.top - 1, rcClient.right, rcClient.bottom };
-		m_wndButton.Create(this, 1, m_hWnd, &rcButton, NULL, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | BS_PUSHBUTTON | BS_OWNERDRAW);
-		ATLASSERT(m_wndButton.IsWindow());
-		m_wndButton.SetFont(GetFont());
-		// HACK: Windows needs to repaint this guy again!
-		m_wndButton.SetFocus();
-		m_bReadOnly = true;
+ 		RECT rcButton = { rcClient.right - cy, rcClient.top - 1, rcClient.right + 1, rcClient.bottom - 2};
+ 		m_wndButton.Create(this, 1, m_hWnd, &rcButton, NULL, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | BS_PUSHBUTTON | BS_OWNERDRAW);
+ 		ATLASSERT(m_wndButton.IsWindow());
+ 		m_wndButton.SetFont(GetFont());
+// 		// HACK: Windows needs to repaint this guy again!
+ 		m_wndButton.SetFocus();
 		return lRes;
 	}
 	LRESULT OnSetFocus(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& bHandled)
 	{
+		bHandled = FALSE;
+		return 0;
 		if (!m_bReadOnly)
 		{
 			bHandled = FALSE;
@@ -194,19 +194,46 @@ public:
 		{
 			// Set focus to button to prevent input
 			m_wndButton.SetFocus();
-			m_wndButton.Invalidate();
 		}
+		m_wndButton.Invalidate();
 		return 0;
 	}
-	LRESULT OnKillFocus(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& bHandled)
+	LRESULT OnKillFocus(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 	{
-		if ((HWND)wParam != m_wndButton) ::SendMessage(GetParent(), WM_USER_PROP_UPDATEPROPERTY, 0, (LPARAM)m_hWnd);
-		bHandled = FALSE;
-		return 0;
+		LRESULT lRes = DefWindowProc(uMsg, wParam, lParam);
+		if (GetFocus() == m_wndButton)return lRes;
+		::SendMessage(GetParent(), Edit_GetModify(m_hWnd) ? WM_USER_PROP_UPDATEPROPERTY : WM_USER_PROP_CANCELPROPERTY , 0, (LPARAM) m_hWnd);
+		return lRes;
 	}
 	LRESULT OnKeyDown(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& bHandled)
 	{
-		if (m_bReadOnly)
+		switch (wParam)
+		{
+		case VK_ESCAPE:
+			// FALL THROUGH...
+		case VK_RETURN:
+			// Force focus to parent to update value (see OnKillFocus()...)
+			::SetFocus(GetParent());
+			// FIX: Allowing a multiline EDIT to VK_ESCAPE will send a WM_CLOSE
+			//      to the list control if it's embedded in a dialog!?
+			return 0;
+		case VK_TAB:
+		case VK_UP:
+		case VK_DOWN:
+			return ::PostMessage(GetParent(), WM_USER_PROP_NAVIGATE, LOWORD(wParam), 0);
+		case VK_LEFT:
+			int lLow, lHigh;
+			GetSel(lLow, lHigh);
+			if (lLow != lHigh || lLow != 0) break;
+			return ::PostMessage(GetParent(), WM_USER_PROP_NAVIGATE, LOWORD(wParam), 0);
+		case VK_RIGHT:
+			GetSel(lLow, lHigh);
+			if (lLow != lHigh || lLow != GetWindowTextLength()) break;
+			return ::PostMessage(GetParent(), WM_USER_PROP_NAVIGATE, LOWORD(wParam), 0);
+		}
+		bHandled = FALSE;
+		return 0;
+		if (!m_bReadOnly)
 		{
 			bHandled = FALSE;
 			return 0;
@@ -241,9 +268,15 @@ public:
 		bHandled = FALSE;
 		return 0;
 	}
-	LRESULT OnChar(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& bHandled)
+	LRESULT OnChar(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& bHandled)
 	{
-		// Don't allow any editing
+		switch (LOWORD(wParam))
+		{
+		case VK_RETURN:
+		case VK_ESCAPE:
+			// Do not BEEP!!!!
+			return 0;
+		}
 		if (!m_bReadOnly) bHandled = FALSE;
 		return 0;
 	}
@@ -277,7 +310,7 @@ public:
 	}
 	LRESULT OnGetDlgCode(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& /*bHandled*/)
 	{
-		return DefWindowProc(uMsg, wParam, lParam) | DLGC_WANTALLKEYS;
+		return DefWindowProc(uMsg, wParam, lParam) | DLGC_WANTALLKEYS | DLGC_WANTARROWS;
 	}
 };
 
@@ -449,6 +482,93 @@ public:
 			DrawFrameControl(lpdis->hDC, &lpdis->rcItem, DFC_SCROLL, (lpdis->itemState & ODS_SELECTED) != 0 ? DFCS_SCROLLDOWN | DFCS_PUSHED : DFCS_SCROLLDOWN);
 		}
 
+		return 0;
+	}
+};
+
+class CPropertyButtonWindow : 
+	public CPropertyDropWindowImpl<CPropertyButtonWindow>
+{
+public:
+	DECLARE_WND_SUPERCLASS(_T("WTL_InplacePropertyButton"), CEdit::GetWndClassName())
+
+	IProperty* m_prop; // BUG: Dangerous reference
+
+	CPropertyButtonWindow()
+	{
+		SetThemeClassList(L"BUTTON");
+	}
+
+	typedef CPropertyDropWindowImpl<CPropertyButtonWindow> baseClass;
+
+	BEGIN_MSG_MAP(CPropertyButtonWindow)
+		COMMAND_CODE_HANDLER(BN_CLICKED, OnButtonClicked)
+		MESSAGE_HANDLER(WM_DRAWITEM, OnDrawItem)
+		CHAIN_MSG_MAP( baseClass )
+		ALT_MSG_MAP(1) // Button
+		CHAIN_MSG_MAP_ALT( baseClass, 1 )
+	END_MSG_MAP()
+
+	LRESULT OnButtonClicked(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
+	{
+		ATLASSERT(m_prop);
+		// Call Property class' implementation of BROWSE action
+		m_prop->Activate(PACT_BROWSE, 0);
+		// Tell control to update its display
+		::SendMessage(GetParent(), WM_USER_PROP_UPDATEPROPERTY, 0, (LPARAM) m_hWnd);
+		return 0;
+	}
+
+	LRESULT OnDrawItem(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam, BOOL& /*bHandled*/)
+	{
+		LPDRAWITEMSTRUCT lpdis = (LPDRAWITEMSTRUCT) lParam;
+		if( m_wndButton != lpdis->hwndItem ) return 0;
+		CDCHandle dc(lpdis->hDC);
+		BOOL bHover = FALSE;
+		POINT pt;
+		if (GetCursorPos(&pt))
+		{
+			m_wndButton.ScreenToClient(&pt);
+			if(PtInRect(&lpdis->rcItem, pt))
+			{
+				bHover = TRUE;
+			}
+		}
+
+		if (m_hTheme)
+		{
+			RECT rc;
+			CopyRect(&rc, &lpdis->rcItem);
+			rc.top += 1;
+			int nStateID = 0;
+			if (bHover)
+			{
+				nStateID |= PBS_HOT;
+			}
+			if (lpdis->itemState & ODS_SELECTED)
+			{
+				nStateID |= PBS_PRESSED;
+			}
+			else
+			{
+				nStateID |= PBS_NORMAL;
+			}
+			DrawThemeBackground(lpdis->hDC, BP_PUSHBUTTON, nStateID, &rc, NULL);
+			DrawThemeEdge(lpdis->hDC, BP_PUSHBUTTON, nStateID, &rc, 0, 0, NULL);
+		}
+		else
+		{
+			dc.DrawFrameControl(&lpdis->rcItem, DFC_BUTTON, (lpdis->itemState & ODS_SELECTED) != 0 ? DFCS_BUTTONPUSH | DFCS_PUSHED : DFCS_BUTTONPUSH);
+		}
+		// Paint as ellipsis button
+		dc.SetBkMode(TRANSPARENT);
+		LPCTSTR pstrEllipsis = _T("...");
+		dc.DrawText(pstrEllipsis, ::lstrlen(pstrEllipsis), &lpdis->rcItem, DT_CENTER | DT_EDITCONTROL | DT_SINGLELINE | DT_VCENTER);
+
+		if (bHover)
+		{
+			m_wndButton.SetFocus();
+		}
 		return 0;
 	}
 };

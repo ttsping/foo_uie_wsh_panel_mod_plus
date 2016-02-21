@@ -303,6 +303,180 @@ public:
 };
 
 /////////////////////////////////////////////////////////////////////////////
+// FileName property
+
+class CPropertyFileNameItem : public CPropertyItem
+{
+protected:
+	HWND m_hEditWnd;
+public:
+	CPropertyFileNameItem(LPCTSTR pstrName, LPARAM lParam) : CPropertyItem(pstrName, lParam)
+	{
+	}
+
+	CPropertyFileNameItem(LPCTSTR pstrName, LPCTSTR pstrFilename, LPARAM lParam) : CPropertyItem(pstrName, lParam)
+	{
+		m_val = pstrFilename;
+	}
+
+	BYTE GetKind() const
+	{
+		ATLASSERT(V_VT(&m_val)==VT_BSTR);
+
+		LPCTSTR lpFileName = m_val.bstrVal;
+		if (lpFileName[_tcslen(lpFileName) - 1] == '\\')
+		{
+			return PROPKIND_FOLDERNAME;
+		}
+		return PROPKIND_FILENAME;
+	}
+
+	HWND CreateInplaceControl(HWND hWnd, const RECT& rc) 
+	{
+		// Get default text
+		TCHAR szText[MAX_PATH] = { 0 };
+		if( !GetDisplayValue(szText, (sizeof(szText) / sizeof(TCHAR)) - 1) ) return NULL;      
+		// Create EDIT control
+		CPropertyButtonWindow* win = new CPropertyButtonWindow();
+		ATLASSERT(win);
+		RECT rcWin = rc;
+		win->m_prop = this;
+		win->m_bReadOnly = false;
+		win->Create(hWnd, rcWin, szText, WS_VISIBLE | WS_CHILD | ES_LEFT | ES_AUTOHSCROLL);
+		ATLASSERT(win->IsWindow());
+		m_hEditWnd = win->m_hWnd;
+		return *win;
+	}
+
+	BOOL SetValue(const VARIANT& value)
+	{
+		ATLASSERT(V_VT(&value)==VT_BSTR);
+		ATLASSERT(::IsWindow(m_hEditWnd));
+		m_val = value;
+		::SetWindowText(m_hEditWnd, m_val.bstrVal);
+		return TRUE;
+	}
+
+	BOOL SetValue(HWND hWnd) 
+	{
+		ATLASSERT(::IsWindow(hWnd));
+		int len = ::GetWindowTextLength(hWnd) + 1;
+		CString text;
+		int ret = ::GetWindowText(hWnd, text.GetBuffer(len), len);
+		text.ReleaseBuffer();
+
+		if (!ret)
+		{
+			// Bah, an empty string *and* an error causes the same return code!
+			if (::GetLastError() != ERROR_SUCCESS)
+				return FALSE;
+		}
+
+		return SetValue(CComVariant(text));
+	}
+
+	BOOL Activate(UINT action, LPARAM /*lParam*/)
+	{
+		switch( action ) {
+		case PACT_BROWSE:
+		case PACT_DBLCLICK:
+			// Let control owner know
+			NMPROPERTYITEM nmh = { m_hWndOwner, ::GetDlgCtrlID(m_hWndOwner), PIN_BROWSE, this };
+			::SendMessage(::GetParent(m_hWndOwner), WM_NOTIFY, nmh.hdr.idFrom, (LPARAM) &nmh);
+			break;
+		}
+		return TRUE;
+	}
+
+	BOOL GetDisplayValue(LPTSTR pstr, UINT cchMax) const
+	{
+		ATLASSERT(!::IsBadStringPtr(pstr, cchMax));
+		*pstr = _T('\0');
+		if( m_val.bstrVal == NULL ) return TRUE;
+
+		USES_CONVERSION;
+		LPCTSTR pstrFileName = OLE2CT(m_val.bstrVal);
+		LPCTSTR p = pstrFileName;
+// 		while( *p != '\0' ) {
+// 			if( *p == _T(':') || *p == _T('\\') ) pstrFileName = p + 1;
+// 			p = ::CharNext(p);
+// 		}
+		::lstrcpyn(pstr, pstrFileName, cchMax);
+		return TRUE;
+	}
+
+	UINT GetDisplayValueLength() const
+	{
+		TCHAR szPath[MAX_PATH] = { 0 };
+		if( !GetDisplayValue(szPath, (sizeof(szPath) / sizeof(TCHAR)) - 1) ) return 0;
+		return ::lstrlen(szPath);
+	}
+};
+
+/////////////////////////////////////////////////////////////////////////////
+// Color property
+
+class CPropertyColorItem : public CPropertyItem
+{
+public:
+	CPropertyColorItem(LPCTSTR pstrName, LPARAM lParam) : CPropertyItem(pstrName, lParam)
+	{
+	}
+
+	CPropertyColorItem(LPCTSTR pstrName, COLORREF clrColor, LPARAM lParam) : CPropertyItem(pstrName, lParam)
+	{
+		m_val = clrColor;
+	}
+
+	BYTE GetKind() const
+	{
+		return PROPKIND_COLOR;
+	}
+
+	HWND CreateInplaceControl(HWND hWnd, const RECT& rc)
+	{
+		//create a 'unused' one
+		return ::CreateWindowEx(0, _T("Static"), NULL, WS_CHILD, 0, 0, 0, 0, hWnd, NULL, NULL, NULL);
+	}
+
+	BOOL SetValue(const VARIANT& value)
+	{
+		ATLASSERT(V_VT(&value)==VT_UI4);
+		m_val = value;
+		return TRUE;
+	}
+
+	BOOL SetValue(HWND /*hWnd*/) 
+	{
+		return TRUE;
+	}
+
+	BOOL Activate(UINT action, LPARAM /*lParam*/)
+	{
+		switch( action ) {
+		case PACT_DBLCLICK:
+			NMPROPERTYITEM nmh = { m_hWndOwner, ::GetDlgCtrlID(m_hWndOwner), PIN_BROWSE, this };
+			::SendMessage(::GetParent(m_hWndOwner), WM_NOTIFY, nmh.hdr.idFrom, (LPARAM) &nmh);
+			::SendMessage(m_hWndOwner, WM_USER_PROP_UPDATEPROPERTY, 0, (LPARAM) m_hWndOwner/*unused*/);
+			break;
+		}
+		return TRUE;
+	}
+
+	void DrawValue(PROPERTYDRAWINFO& di)
+	{
+		CDCHandle dc(di.hDC);
+		COLORREF bkColor = m_val.intVal;
+		HBRUSH hBrush = CreateSolidBrush(bkColor);
+		RECT rc;
+		::CopyRect(&rc, &di.rcItem);
+		//rc.left = di.rcItem.left + (di.rcItem.right - di.rcItem.left)/3;
+		rc.right = di.rcItem.left + /*2 **/ (di.rcItem.right - di.rcItem.left)/3;
+		dc.FillRect(&rc, hBrush);
+		DeleteObject(hBrush);
+	}
+};
+/////////////////////////////////////////////////////////////////////////////
 // DropDown List property
 
 class CPropertyListItem : public CPropertyItem
@@ -522,6 +696,16 @@ inline HPROPERTY PropCreateSimple(LPCTSTR pstrName, bool bValue, LPARAM lParam =
 inline HPROPERTY PropCreateList(LPCTSTR pstrName, LPCTSTR* ppList, int iValue = 0, LPARAM lParam = 0)
 {
 	return new CPropertyListItem(pstrName, ppList, iValue, lParam);
+}
+
+inline HPROPERTY PropCreateFileName(LPCTSTR pstrName, LPCTSTR pstrFileName, LPARAM lParam = 0)
+{
+	return new CPropertyFileNameItem(pstrName, pstrFileName, lParam);
+}
+
+inline HPROPERTY PropCreateColor(LPCTSTR pstrName, COLORREF clrColor, LPARAM lParam = 0)
+{
+	return new CPropertyColorItem(pstrName, clrColor, lParam);
 }
 
 #endif // __PROPERTYITEMIMPL__H

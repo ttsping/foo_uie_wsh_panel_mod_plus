@@ -14,6 +14,22 @@ class CDialogProperty
 	, public CDialogResize<CDialogProperty>
 {
 private:
+	enum t_property_type
+	{
+		t_prop_simple = 0,
+		t_prop_file,
+		t_prop_color,
+	};
+
+	struct t_property_tag
+	{
+		t_property_type type;
+		union{
+			COLORREF color;
+			LPCTSTR lpText;
+		}data;
+	};
+
 	wsh_panel_window * m_parent;
 	CPropertyListCtrl m_properties;
 	prop_kv_config::t_map m_dup_prop_map;
@@ -43,6 +59,7 @@ public:
 		COMMAND_HANDLER_EX(IDC_IMPORT, BN_CLICKED, OnImportBnClicked)
 		COMMAND_HANDLER_EX(IDC_EXPORT, BN_CLICKED, OnExportBnClicked)
 		NOTIFY_CODE_HANDLER_EX(PIN_ITEMCHANGED, OnPinItemChanged)
+		NOTIFY_CODE_HANDLER_EX(PIN_BROWSE, OnPinItemBrowse)
 		CHAIN_MSG_MAP(CDialogResize<CDialogProperty>)
 		REFLECT_NOTIFICATIONS()
 	END_MSG_MAP()
@@ -62,8 +79,13 @@ public:
 	LRESULT OnInitDialog(HWND hwndFocus, LPARAM lParam);
 	LRESULT OnCloseCmd(WORD wNotifyCode, WORD wID, HWND hWndCtl);
 	LRESULT OnPinItemChanged(LPNMHDR pnmh);
+	LRESULT OnPinItemBrowse(LPNMHDR pnmh);
 	LRESULT OnClearallBnClicked(WORD wNotifyCode, WORD wID, HWND hWndCtl);
 	LRESULT OnDelBnClicked(WORD wNotifyCode, WORD wID, HWND hWndCtl);
 	LRESULT OnImportBnClicked(WORD wNotifyCode, WORD wID, HWND hWndCtl);
 	LRESULT OnExportBnClicked(WORD wNotifyCode, WORD wID, HWND hWndCtl);
+private:
+	VOID AnalyzeStringProp(LPCTSTR lpText, t_property_tag& tag);
+	VOID GenColorStringProp(COLORREF color, _variant_t& var);
+
 };
