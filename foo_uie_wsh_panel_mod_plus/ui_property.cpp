@@ -222,11 +222,21 @@ LRESULT CDialogProperty::OnPinItemBrowse( LPNMHDR pnmh )
 	{
 	case PROPKIND_COLOR:
 		{
+			_variant_t val;
+			nmp->prop->GetValue(&val);
+			PFC_ASSERT(V_VT(&val) == VT_UI4);
+
 			static COLORREF custom_colors[16] = { 0 };
-			COLORREF color;
-			if (uChooseColor(&color, m_hWnd, custom_colors))
+
+			CHOOSECOLOR cc = { 0 };
+			cc.lStructSize = sizeof(cc);
+			cc.hwndOwner = m_hWnd;
+			cc.rgbResult = val.ulVal;
+			cc.lpCustColors = custom_colors;
+			cc.Flags = CC_FULLOPEN | CC_RGBINIT;
+			if (ChooseColor(&cc))
 			{
-				CComVariant var(color);
+				CComVariant var(cc.rgbResult);
 				m_properties.SetItemValue(nmp->prop, &var);
 			}
 		}
