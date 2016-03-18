@@ -432,7 +432,7 @@ LRESULT CDialogConf::OnUwmConsolePrint( UINT uMsg, WPARAM wParam, LPARAM lParam,
 {
 	const char * p_msg = reinterpret_cast<const char*>(wParam);
 	unsigned p_len = static_cast<unsigned>(lParam);
-	if(p_msg && p_len){
+	if(p_msg && p_len && m_consolectrl.IsWindow()){
 		pfc::string8_fast temp;
 		int len = m_consolectrl.GetTextLength();
 		if (len)temp << "\n";
@@ -519,9 +519,6 @@ void CDialogConf::OnShowConsolePane( UINT uNotifyCode, int nID, CWindow wndCtl )
 	pfc::string8 lang_caption;
 	uSetWindowText(GetDlgItem(IDC_TOOLS), show_pane ? load_lang(IDS_CAPTION_CLEAR, lang_caption) : load_lang(IDS_CAPTION_TOOL, lang_caption));
 }
-
-
-
 
 void CDialogConf::wsh_console_receiver_impl::print( const char * p_message, unsigned p_message_length )
 {
