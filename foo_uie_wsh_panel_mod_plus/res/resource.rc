@@ -96,18 +96,18 @@ BEGIN
     CONTROL         "安全模式",IDC_CHECK_SAFE_MODE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,242,54,10
 END
 
-IDD_DIALOG_PROPERTIES DIALOGEX 0, 0, 259, 213
+IDD_DIALOG_PROPERTIES DIALOGEX 0, 0, 299, 244
 STYLE DS_SETFONT | WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
 FONT 8, "Tahoma", 400, 0, 0x1
 BEGIN
-    DEFPUSHBUTTON   "确定(&O)",IDOK,94,192,50,14
-    PUSHBUTTON      "取消",IDCANCEL,202,192,50,14
-    LISTBOX         IDC_LIST_PROPERTIES,7,24,245,161,LBS_OWNERDRAWVARIABLE | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
-    PUSHBUTTON      "应用(&A)",IDAPPLY,148,192,50,14
-    PUSHBUTTON      "清除(&C)",IDC_CLEARALL,126,7,40,13
-    PUSHBUTTON      "删除(&D)",IDC_DEL,83,7,40,13
-    PUSHBUTTON      "导出(&E)",IDC_EXPORT,212,7,40,13
-    PUSHBUTTON      "导入(&I)",IDC_IMPORT,169,7,40,13
+    DEFPUSHBUTTON   "确定(&O)",IDOK,133,222,50,15
+    PUSHBUTTON      "取消",IDCANCEL,242,222,50,15
+    LISTBOX         IDC_LIST_PROPERTIES,7,24,285,192,LBS_OWNERDRAWVARIABLE | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "应用(&A)",IDAPPLY,188,222,50,15
+    PUSHBUTTON      "清除(&C)",IDC_CLEARALL,167,7,40,13
+    PUSHBUTTON      "删除(&D)",IDC_DEL,124,7,40,13
+    PUSHBUTTON      "导出(&E)",IDC_EXPORT,252,7,40,13
+    PUSHBUTTON      "导入(&I)",IDC_IMPORT,210,7,40,13
 END
 
 IDD_DIALOG_REPLACE DIALOGEX 0, 0, 249, 136
@@ -186,13 +186,13 @@ BEGIN
     IDD_DIALOG_PROPERTIES, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 252
+        RIGHTMARGIN, 292
         TOPMARGIN, 7
-        BOTTOMMARGIN, 206
+        BOTTOMMARGIN, 237
         HORZGUIDE, 20
         HORZGUIDE, 24
-        HORZGUIDE, 185
-        HORZGUIDE, 192
+        HORZGUIDE, 216
+        HORZGUIDE, 222
     END
 
     IDD_DIALOG_REPLACE, DIALOG
@@ -308,6 +308,9 @@ BEGIN
     IDS_CUI_WARNING         "警告: 至少一个 %s 实例运行于类CUI的容器 (浮动面板，FUI，等等) 但却无法使用分栏用户界面提供的一些基本服务 (没有或者使用很旧的分栏用户界面版本?)。\n请下载并安装最新版本的分栏用户界面:\nhttp://yuo.be/columns.php\n\n[这个提示信息仅弹出显示一次]"
     IDS_DUI_DECRIPTION      "自定义的面板支持使用VBScript和JScript脚本."
     IDS_WSHM_DOCS           "WSHM 帮助文档"
+    IDS_BROWSE_TITLE        "浏览..."
+    IDS_BROWSE_FILETYPE     "所有文件|*.*"
+    IDS_NEW_PLAYLIST_NAME   "新建播放列表"
 END
 
 #endif    // Chinese (Simplified) resources
@@ -326,19 +329,19 @@ LANGUAGE LANG_ENGLISH, SUBLANG_NEUTRAL
 // Dialog
 //
 
-IDD_DIALOG_PROPERTIES DIALOGEX 0, 0, 259, 213
-STYLE DS_SETFONT | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
+IDD_DIALOG_PROPERTIES DIALOGEX 0, 0, 299, 244
+STYLE DS_SETFONT | WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
 CAPTION "Properties"
 FONT 8, "Tahoma", 400, 0, 0x1
 BEGIN
-    DEFPUSHBUTTON   "OK",IDOK,94,192,50,14
-    PUSHBUTTON      "Cancel",IDCANCEL,202,192,50,14
-    LISTBOX         IDC_LIST_PROPERTIES,7,24,245,161,LBS_OWNERDRAWVARIABLE | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
-    PUSHBUTTON      "&Apply",IDAPPLY,148,192,50,14
-    PUSHBUTTON      "C&lear",IDC_CLEARALL,126,7,40,13
-    PUSHBUTTON      "De&lete",IDC_DEL,83,7,40,13
-    PUSHBUTTON      "E&xport",IDC_EXPORT,212,7,40,13
-    PUSHBUTTON      "I&mport",IDC_IMPORT,169,7,40,13
+    DEFPUSHBUTTON   "OK",IDOK,133,222,50,15
+    PUSHBUTTON      "Cancel",IDCANCEL,242,222,50,15
+    LISTBOX         IDC_LIST_PROPERTIES,7,24,285,192,LBS_OWNERDRAWVARIABLE | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "&Apply",IDAPPLY,188,222,50,15
+    PUSHBUTTON      "C&lear",IDC_CLEARALL,167,7,40,13
+    PUSHBUTTON      "De&lete",IDC_DEL,124,7,40,13
+    PUSHBUTTON      "E&xport",IDC_EXPORT,252,7,40,13
+    PUSHBUTTON      "I&mport",IDC_IMPORT,210,7,40,13
 END
 
 IDD_DIALOG_FIND DIALOGEX 0, 0, 239, 96
@@ -445,9 +448,9 @@ BEGIN
     IDD_DIALOG_PROPERTIES, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 252
+        RIGHTMARGIN, 259
         TOPMARGIN, 7
-        BOTTOMMARGIN, 206
+        BOTTOMMARGIN, 225
         HORZGUIDE, 20
         HORZGUIDE, 24
         HORZGUIDE, 185
@@ -612,6 +615,9 @@ BEGIN
     IDS_CUI_WARNING         "Warning: At least one %s instance is running in CUI containers (dockable panels, Func UI, etc) without some services provided by the Columns UI component (have not been installed or have a very old version installed?).\nPlease download and install the latest version of Columns UI:\nhttp://yuo.be/columns.php\n\n[This popup message will be shown only once]"
     IDS_DUI_DECRIPTION      "Customizable panel with VBScript and JScript scripting support."
     IDS_WSHM_DOCS           "WSHM Help Docs"
+    IDS_BROWSE_TITLE        "Browse..."
+    IDS_BROWSE_FILETYPE     "All files|*.*"
+    IDS_NEW_PLAYLIST_NAME   "New Playlist"
 END
 
 #endif    // English resources

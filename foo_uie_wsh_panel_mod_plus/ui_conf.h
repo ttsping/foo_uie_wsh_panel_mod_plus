@@ -24,17 +24,16 @@ public:
 	static HWND g_cfgdlg;//ensure that there is only one dlg instance.
 
 private:
-	wsh_splitter_window   m_split_wnd;
-	CScriptEditorCtrl     m_editorctrl;
-	CScriptEditorCtrl     m_consolectrl;
-	CDialogFind *         m_dlgfind;
-	CDialogReplace *      m_dlgreplace;
-	wsh_panel_window *    m_parent;
-	CDialogConf **        m_self;
-	pfc::string8          m_caption;
-	unsigned int          m_lastFlags;
-	pfc::string8          m_lastSearchText;
-
+	wsh_splitter_window        m_split_wnd;
+	CScriptEditorCtrl          m_editorctrl;
+	CScriptEditorCtrl          m_consolectrl;
+	CDialogFind *              m_dlgfind;
+	CDialogReplace *           m_dlgreplace;
+	wsh_panel_window *         m_parent;
+	CDialogConf **             m_self;
+	pfc::string8               m_caption;
+	unsigned int               m_lastFlags;
+	pfc::string8               m_lastSearchText;
 public:
 	CDialogConf(wsh_panel_window * p_parent , CDialogConf ** p_self) 
 		: m_parent(p_parent)

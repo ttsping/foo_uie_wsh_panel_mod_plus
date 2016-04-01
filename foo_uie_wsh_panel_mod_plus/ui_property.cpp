@@ -127,11 +127,7 @@ void CDialogProperty::LoadProperties(bool reload /*= true*/)
 		default:
 			{
 				var.ChangeType(VT_BSTR, &v);
-<<<<<<< HEAD
 				if(!var.bstrVal)return;
-=======
-				if(!v.bstrVal)return;
->>>>>>> 920e941f001b35723d02a081c8ed81ce0ed24448
 				t_property_tag tag;
 				AnalyzeStringProp(var.bstrVal, tag);
 				switch(tag.type)
