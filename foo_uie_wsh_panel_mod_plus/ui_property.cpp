@@ -127,8 +127,9 @@ void CDialogProperty::LoadProperties(bool reload /*= true*/)
 		default:
 			{
 				var.ChangeType(VT_BSTR, &v);
+				if(!var.bstrVal)return;
 				t_property_tag tag;
-				AnalyzeStringProp(v.bstrVal, tag);
+				AnalyzeStringProp(var.bstrVal, tag);
 				switch(tag.type)
 				{
 				case t_prop_file:
@@ -274,7 +275,7 @@ VOID CDialogProperty::AnalyzeStringProp( LPCTSTR lpText, t_property_tag& tag )
 	PFC_ASSERT(lpText);
 	tag.type = t_prop_simple;
 	tag.data.lpText = lpText;
-
+	
 	const TCHAR* text_start = lpText;
 	size_t len = _tcslen(lpText);
 
