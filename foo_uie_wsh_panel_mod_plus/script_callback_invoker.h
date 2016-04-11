@@ -66,6 +66,7 @@ struct CallbackIds
         on_script_unload,
 		on_http_run_done,
 		on_process_locations_done,
+		on_http_ex_run_status,
         end,
     };
 };

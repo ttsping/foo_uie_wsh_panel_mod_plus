@@ -394,7 +394,7 @@ STDMETHODIMP FbWindow::CreateTimerTimeout(UINT timeout, ITimerObj ** pp)
 	TRACK_FUNCTION();
 	if (!pp) return E_POINTER;
 	pfc::string8 msg, lang_msg, lang_test;
-	helpers::uSPrintf(msg, load_lang(IDS_OBSOLETE_MSG, lang_msg), "window.CreateTimerTimeout()", "window.SetTimeout()");
+	helpers::sprintf8(msg, load_lang(IDS_OBSOLETE_MSG, lang_msg), "window.CreateTimerTimeout()", "window.SetTimeout()");
     PRINT_OBSOLETE_MESSAGE_ONCE(msg);
 	(*pp) = m_host->CreateTimerTimeout(timeout);
 	return S_OK;
@@ -405,7 +405,7 @@ STDMETHODIMP FbWindow::CreateTimerInterval(UINT delay, ITimerObj ** pp)
 	TRACK_FUNCTION();
 	if (!pp) return E_POINTER;
 	pfc::string8 msg, lang_msg;
-	helpers::uSPrintf(msg, load_lang(IDS_OBSOLETE_MSG, lang_msg), "window.CreateTimerInterval()", "window.SetInterval()");
+	helpers::sprintf8(msg, load_lang(IDS_OBSOLETE_MSG, lang_msg), "window.CreateTimerInterval()", "window.SetInterval()");
     PRINT_OBSOLETE_MESSAGE_ONCE(msg);
 	(*pp)= m_host->CreateTimerInterval(delay);
 	return S_OK;

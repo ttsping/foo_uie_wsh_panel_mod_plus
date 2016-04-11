@@ -74,7 +74,7 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>GdiPlus.lib;shared.lib;shlwapi.lib;WinMM.lib;Imm32.lib;uxtheme.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>GdiPlus.lib;shared.lib;shlwapi.lib;WinMM.lib;Imm32.lib;uxtheme.lib;winhttp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../shared;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <DelayLoadDLLs>%(DelayLoadDLLs)</DelayLoadDLLs>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -110,7 +110,7 @@ copy "$(SolutionDir)extras\*.api" "C:\Users\ohyeah\Desktop\foobar2000\components
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>GdiPlus.lib;shared.lib;shlwapi.lib;WinMM.lib;Imm32.lib;uxtheme.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>GdiPlus.lib;shared.lib;shlwapi.lib;WinMM.lib;Imm32.lib;uxtheme.lib;winhttp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../shared;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <DelayLoadDLLs>%(DelayLoadDLLs)</DelayLoadDLLs>
       <GenerateDebugInformation>true</GenerateDebugInformation>

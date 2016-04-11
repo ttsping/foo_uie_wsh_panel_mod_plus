@@ -191,7 +191,9 @@ namespace helpers
 	// Always save as UTF8 BOM
 	bool write_file(const char * path, const pfc::string_base & content);
 
-	void uSPrintf(pfc::string_base& p_out, const char* p_fmt, ...);
+	void sprintf8(pfc::string_base& p_out, const char* p_fmt, ...);
+
+	bool create_directory_recur(const char* path);
 
 	class file_info_pairs_filter : public file_info_filter
 	{

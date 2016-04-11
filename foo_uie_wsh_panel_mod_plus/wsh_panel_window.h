@@ -134,6 +134,7 @@ private:
 	void on_http_run_done(LPARAM wp);
 	void on_process_locations_done(WPARAM wp);
 
+	void on_http_ex_run_status(WPARAM wp);
 protected:
     // override me
     virtual void notify_size_limit_changed_(LPARAM lp) = 0;
