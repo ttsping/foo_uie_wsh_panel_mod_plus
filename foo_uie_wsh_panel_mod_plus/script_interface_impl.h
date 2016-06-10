@@ -872,6 +872,7 @@ public:
 	STDMETHODIMP get_ID(UINT * p);
 	STDMETHODIMP get_URL(BSTR * pp);
 	STDMETHODIMP get_Path(BSTR* pp);
+	STDMETHODIMP get_Headers(BSTR* pp);
 	STDMETHODIMP get_Length(UINT * p);
 	STDMETHODIMP get_ContentLength(UINT * p);
 	STDMETHODIMP get_ElapsedTime(float * p);
@@ -934,6 +935,7 @@ public:
 
 	STDMETHODIMP Run(BSTR url, BSTR verb, BSTR* pp);
 	STDMETHODIMP RunAsync(UINT id, BSTR url,BSTR fn, BSTR verb, UINT* p);
+	STDMETHODIMP AbortAsync(UINT id, BSTR url, VARIANT_BOOL* p);
 
 public:
 	static VOID CALLBACK AsyncStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DWORD dwInternetStatus, LPVOID lpvStatusInformation, DWORD dwStatusInformationLength);

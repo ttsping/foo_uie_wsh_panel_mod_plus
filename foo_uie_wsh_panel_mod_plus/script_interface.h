@@ -738,6 +738,7 @@ __interface IHttpRequestExCallbackInfo: IDispatch
 	[propget] STDMETHOD(ID)([out,retval]UINT* p);
 	[propget] STDMETHOD(URL)([out,retval]BSTR* pp);
 	[propget] STDMETHOD(Path)([out,retval]BSTR* pp);
+	[propget] STDMETHOD(Headers)([out,retval]BSTR* pp);
 	[propget] STDMETHOD(Length)([out,retval]UINT* p);
 	[propget] STDMETHOD(ContentLength)([out,retval]UINT* p);
 	[propget] STDMETHOD(ElapsedTime)([out,retval]float* p);
@@ -757,4 +758,5 @@ __interface IHttpRequestEx: IDisposable
 
 	STDMETHOD(Run)(BSTR url, [defaultvalue("GET")]BSTR verb,[out,retval] BSTR* pp);
 	STDMETHOD(RunAsync)(UINT id, BSTR url, [defaultvalue("")]BSTR fn, [defaultvalue("GET")]BSTR verb, [out,retval] UINT* p);
+	STDMETHOD(AbortAsync)(UINT id, [defaultvalue("")]BSTR url, [out,retval] VARIANT_BOOL* p);
 };
