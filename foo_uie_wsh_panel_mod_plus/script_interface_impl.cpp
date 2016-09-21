@@ -5,6 +5,7 @@
 #include "com_array.h"
 #include "gdiplus_helpers.h"
 #include "boxblurfilter.h"
+#include "stackblur.h"
 #include "user_message.h"
 #include "popup_msg.h"
 #include "dbgtrace.h"
@@ -318,6 +319,17 @@ STDMETHODIMP GdiBitmap::BoxBlur(int radius, int iteration)
     bbf.filter(*m_ptr);
 
     return S_OK;
+}
+
+STDMETHODIMP GdiBitmap::StackBlur(int radius, int core)
+{
+	TRACK_FUNCTION();
+
+	if(!m_ptr) return E_POINTER;
+
+	stack_blur_filter(*m_ptr, radius, core);
+
+	return S_OK;
 }
 
 STDMETHODIMP GdiBitmap::Resize(UINT w, UINT h, INT interpolationMode, IGdiBitmap ** pp)
@@ -5397,6 +5409,13 @@ STDMETHODIMP HttpRequestExCallbackInfo::get_Path(BSTR* pp)
 	return S_OK;
 }
 
+STDMETHODIMP HttpRequestExCallbackInfo::get_Headers(BSTR* pp)
+{
+	if(!pp)return E_POINTER;
+	(*pp) = SysAllocString(m_headers.c_str());
+	return S_OK;
+}
+
 STDMETHODIMP HttpRequestExCallbackInfo::get_Length(UINT * p)
 {
 	if(!p)return E_POINTER;
@@ -5924,5 +5943,46 @@ STDMETHODIMP HttpRequestEx::RunAsync(UINT id, BSTR url,BSTR fn, BSTR verb, UINT*
 		param->Release();
 	}
 	return hr;
+}
+
+STDMETHODIMP HttpRequestEx::AbortAsync(UINT id, BSTR url, VARIANT_BOOL* p)
+{
+	TRACK_FUNCTION();
+
+	if (!url)return E_INVALIDARG;
+	if(!p)return E_POINTER;
+
+	insync(m_request_lock);
+
+	(*p) = TO_VARIANT_BOOL(FALSE);
+
+	t_size n, m = m_requests.get_count();
+
+	for (n = 0; n < m; ++n)
+	{
+		if ((StrCmpW(m_requests[n]->m_url.c_str(), url) == 0) && (m_requests[n]->m_request != NULL))
+			break;
+	}
+
+	if (n == m)
+	{
+		for (n = 0; n < m; ++n)
+		{
+			if ((m_requests[n]->m_id == id) && (m_requests[n]->m_request != NULL))
+				break;
+		}
+	}
+
+	if (n < m)
+	{
+		(VOID)WinHttpSetStatusCallback(m_requests[n]->m_request, NULL, 0, 0);
+		BOOL ret = WinHttpCloseHandle(m_requests[n]->m_request);
+		m_requests[n]->m_request = NULL;
+		m_requests[n]->m_error = ERROR_CANCELLED;
+		RemoveAndReleaseCallbackInfo(m_requests[n]);
+		(*p) = TO_VARIANT_BOOL(ret);
+	}
+
+	return S_OK;
 }
 
