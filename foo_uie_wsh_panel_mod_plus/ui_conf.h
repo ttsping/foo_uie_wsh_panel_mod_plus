@@ -34,6 +34,9 @@ private:
 	pfc::string8               m_caption;
 	unsigned int               m_lastFlags;
 	pfc::string8               m_lastSearchText;
+
+	enum { IDM_ALWAYS_ON_TOP = 0x1002, };
+
 public:
 	CDialogConf(wsh_panel_window * p_parent , CDialogConf ** p_self) 
 		: m_parent(p_parent)
@@ -72,6 +75,8 @@ public:
 	BEGIN_MSG_MAP(CDialogConf)
 		MSG_WM_INITDIALOG(OnInitDialog)
 		MSG_WM_NOTIFY(OnNotify)
+		MSG_WM_INITMENUPOPUP(OnInitMenuPopup)
+		MSG_WM_SYSCOMMAND(OnSysCommand)
 		MESSAGE_HANDLER(UWM_KEYDOWN, OnUwmKeyDown)
         MESSAGE_HANDLER(UWM_FINDTEXTCHANGED, OnUwmFindTextChanged)
 		MESSAGE_HANDLER(UWM_CONSOLE_PRINT,OnUwmConsolePrint)
@@ -104,6 +109,8 @@ public:
 	LRESULT OnScriptEngineCbnSelEndOk(WORD wNotifyCode, WORD wID, HWND hWndCtl);
 	LRESULT OnTools(WORD wNotifyCode, WORD wID, HWND hWndCtl);
 	LRESULT OnNotify(int idCtrl, LPNMHDR pnmh);
+	void OnInitMenuPopup(CMenuHandle menuPopup, UINT nIndex, BOOL bSysMenu);
+	void OnSysCommand(UINT nID, CPoint point);
 	LRESULT OnNCDestroy();
 	LRESULT OnUwmKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
     LRESULT OnUwmFindTextChanged(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
@@ -111,4 +118,7 @@ public:
     static bool FindNext(HWND hWnd, HWND hWndEdit, unsigned flags, const char *which);
     static bool FindPrevious(HWND hWnd, HWND hWndEdit, unsigned flags, const char *which);
     static bool FindResult(HWND hWnd, HWND hWndEdit, int pos, const char *which);
+
+private:
+	BOOL IsMenuItemExist(HMENU hMenu, UINT_PTR uItem);
 };

@@ -66,7 +66,7 @@ LRESULT wsh_panel_window_cui::on_message(HWND hwnd, UINT msg, WPARAM wp, LPARAM 
 			load_lang(IDS_CUI_WARNING, lang_warning);
 			load_lang(IDS_WSHM_NAME, lang_mod);
 
-			helpers::uSPrintf(msg, lang_warning, lang_mod.get_ptr());
+			helpers::sprintf8(msg, lang_warning, lang_mod.get_ptr());
 
             if (!g_cfg_cui_warning_reported)
             {

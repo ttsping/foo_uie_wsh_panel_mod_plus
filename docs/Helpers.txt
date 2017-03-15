@@ -77,7 +77,7 @@ function pos2vol(pos) {
 
 // Inverse function of pos2vol()
 function vol2pos(v){
-     return (Math.round(((Math.pow(10, v / 50) - 0.01) / 0.99)));
+     return ((Math.pow(10, v / 50) - 0.01) / 0.99);
 }
 
 // pre-calculated colors 

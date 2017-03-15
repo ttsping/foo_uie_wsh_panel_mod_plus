@@ -74,7 +74,7 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>GdiPlus.lib;shared.lib;shlwapi.lib;WinMM.lib;Imm32.lib;uxtheme.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>GdiPlus.lib;shared.lib;shlwapi.lib;WinMM.lib;Imm32.lib;uxtheme.lib;winhttp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../shared;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <DelayLoadDLLs>%(DelayLoadDLLs)</DelayLoadDLLs>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -82,8 +82,8 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(TargetPath)" "C:\Users\ohyeah\Desktop\foobar2000\components"
-copy "$(SolutionDir)extras\*.api" "C:\Users\ohyeah\Desktop\foobar2000\components"</Command>
+      <Command>copy "$(TargetPath)" "D:\Temp\foobar2000\components"
+copy "$(SolutionDir)extras\*.api" "D:\Temp\foobar2000\components"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -110,7 +110,7 @@ copy "$(SolutionDir)extras\*.api" "C:\Users\ohyeah\Desktop\foobar2000\components
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>GdiPlus.lib;shared.lib;shlwapi.lib;WinMM.lib;Imm32.lib;uxtheme.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>GdiPlus.lib;shared.lib;shlwapi.lib;WinMM.lib;Imm32.lib;uxtheme.lib;winhttp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../shared;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <DelayLoadDLLs>%(DelayLoadDLLs)</DelayLoadDLLs>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -121,8 +121,8 @@ copy "$(SolutionDir)extras\*.api" "C:\Users\ohyeah\Desktop\foobar2000\components
       <IgnoreSpecificDefaultLibraries>MSVCRT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(TargetPath)" "C:\Users\ohyeah\Desktop\foobar2000\components"
-copy "$(SolutionDir)extras\*.api" "C:\Users\ohyeah\Desktop\foobar2000\components"</Command>
+      <Command>copy "$(TargetPath)" "D:\Temp\foobar2000\components"
+copy "$(SolutionDir)extras\*.api" "D:\Temp\foobar2000\components"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -146,6 +146,7 @@ copy "$(SolutionDir)extras\*.api" "C:\Users\ohyeah\Desktop\foobar2000\components
     <ClCompile Include="script_interface_playlist_impl.cpp" />
     <ClCompile Include="script_interface_tooltip_impl.cpp" />
     <ClCompile Include="script_preprocessor.cpp" />
+    <ClCompile Include="stackblur.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
@@ -190,6 +191,7 @@ copy "$(SolutionDir)extras\*.api" "C:\Users\ohyeah\Desktop\foobar2000\components
     <ClInclude Include="IDropTargetImpl.h" />
     <ClInclude Include="host_droptarget.h" />
     <ClInclude Include="splitter_window.h" />
+    <ClInclude Include="stackblur.h" />
     <ClInclude Include="wsh_mainmenu.h" />
     <ClInclude Include="wsh_panel_window.h" />
     <ClInclude Include="wsh_panel_window_dui.h" />

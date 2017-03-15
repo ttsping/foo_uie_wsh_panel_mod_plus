@@ -82,6 +82,7 @@ __interface IGdiBitmap: IGdiObj
 	STDMETHOD(GetGraphics)([out,retval] __interface IGdiGraphics ** pp);
 	STDMETHOD(ReleaseGraphics)(__interface IGdiGraphics * p);
 	STDMETHOD(BoxBlur)([range(1,20)] int radius, [range(1,20),defaultvalue(1)] int iteration);
+	STDMETHOD(StackBlur)([range(0,255)] int radius, [range(1,20),defaultvalue(1)] int core);
 	STDMETHOD(Resize)(UINT w, UINT h, [range(Gdiplus::InterpolationModeInvalid, Gdiplus::InterpolationModeHighQualityBicubic), defaultvalue(0)] INT interpolationMode, [out,retval] IGdiBitmap ** pp);
     STDMETHOD(GetColorScheme)(UINT count, [out,retval] VARIANT * outArray);
 	STDMETHOD(GetPixel)(INT x , INT y , [out,retval] INT * p);
@@ -634,6 +635,7 @@ __interface IWSHUtils: IDispatch
 	STDMETHOD(PrintPreferencePageGUID)();
 	STDMETHOD(FormatDuration)(double p, [out,retval] BSTR * pp);
 	STDMETHOD(FormatFileSize)(double p, [out,retval] BSTR * pp);
+	STDMETHOD(CreateHttpRequestEx)(UINT wnd, [out,retval]__interface IHttpRequestEx** pp);
 };
 _COM_SMARTPTR_TYPEDEF(IWSHUtils, __uuidof(IWSHUtils));
 
@@ -717,10 +719,45 @@ __interface IPrivateFontCollection
 ]
 __interface IHttpRequest: IDisposable
 {
-	//[propget] STDMETHOD(FamilyCount)([out,retval]INT* p);
-
 	STDMETHOD(AddHeader)(BSTR line);
 	STDMETHOD(AddPostData)(BSTR name,BSTR value);
 	STDMETHOD(Run)(BSTR url,[out,retval] BSTR* pp);
 	STDMETHOD(RunAsync)(UINT window_id, BSTR url,[out,retval] UINT* p);
+};
+
+[
+	object,
+	dual,
+	pointer_default(unique),
+	library_block,
+	uuid("2f98d4b6-82a9-43d6-bb87-4a1aa6e5f8b5")
+]
+__interface IHttpRequestExCallbackInfo: IDispatch
+{
+	[propget] STDMETHOD(Status)([out,retval]UINT* p);
+	[propget] STDMETHOD(Error)([out,retval]UINT* p);
+	[propget] STDMETHOD(ID)([out,retval]UINT* p);
+	[propget] STDMETHOD(URL)([out,retval]BSTR* pp);
+	[propget] STDMETHOD(Path)([out,retval]BSTR* pp);
+	[propget] STDMETHOD(Headers)([out,retval]BSTR* pp);
+	[propget] STDMETHOD(Length)([out,retval]UINT* p);
+	[propget] STDMETHOD(ContentLength)([out,retval]UINT* p);
+	[propget] STDMETHOD(ElapsedTime)([out,retval]float* p);
+};
+
+[
+	object,
+	dual,
+	pointer_default(unique),
+	library_block,
+	uuid("e92b2d19-6292-4eb6-9393-54b9ed097351")
+]
+__interface IHttpRequestEx: IDisposable
+{
+	[propget] STDMETHOD(SavePath)([out,retval]BSTR* pp);
+	[propput] STDMETHOD(SavePath)(BSTR path);
+
+	STDMETHOD(Run)(BSTR url, [defaultvalue("GET")]BSTR verb,[out,retval] BSTR* pp);
+	STDMETHOD(RunAsync)(UINT id, BSTR url, [defaultvalue("")]BSTR fn, [defaultvalue("GET")]BSTR verb, [out,retval] UINT* p);
+	STDMETHOD(AbortAsync)(UINT id, [defaultvalue("")]BSTR url, [out,retval] VARIANT_BOOL* p);
 };

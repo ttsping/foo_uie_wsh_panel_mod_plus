@@ -620,6 +620,10 @@ LRESULT wsh_panel_window::on_message(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 	case CALLBACK_UWM_ON_PROCESS_LOCATIONS_DONE:
 		on_process_locations_done(wp);
 		return 0;
+
+	case CALLBACK_UWM_HTTPEX_RUNASYNC_STATUS:
+		on_http_ex_run_status(wp);
+		return 0;
     }
 
     return uDefWindowProc(hwnd, msg, wp, lp);
@@ -1519,4 +1523,21 @@ void wsh_panel_window::on_process_locations_done( WPARAM wp )
 
 	if (handles)
 		handles->Release();
+}
+
+void wsh_panel_window::on_http_ex_run_status(WPARAM wp)
+{
+	TRACK_FUNCTION();
+
+	t_http_callback_info_ptr param = (t_http_callback_info_ptr)wp;
+	VARIANTARG args[1];
+
+	args[0].vt = VT_DISPATCH;
+	args[0].pdispVal = param;
+	script_invoke_v(CallbackIds::on_http_ex_run_status, args, _countof(args));
+
+	if (param)
+	{
+		param->Release();
+	}
 }

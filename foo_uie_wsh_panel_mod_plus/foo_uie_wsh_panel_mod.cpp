@@ -28,6 +28,8 @@ namespace
 		"Copyright (c) 2009 Wong Shao Voon\n\n\n"
 		"box blur filter\n"
 		"Copyright 2006 Jerry Huxtable\n\n\n"
+		"Stack Blur Algorithm was invented by Mario Klingemann, mario@quasimondo.com\n"
+		"multi-threaded version by Victor Laskin (victor.laskin@gmail.com)\n\n\n"
 		"CPropertyList - A Property List control\n"
 		"Copyright (c) 2001-2003 Bjarke Viksoe\n\n\n"
 	);

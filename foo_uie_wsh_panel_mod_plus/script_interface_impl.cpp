@@ -5,6 +5,7 @@
 #include "com_array.h"
 #include "gdiplus_helpers.h"
 #include "boxblurfilter.h"
+#include "stackblur.h"
 #include "user_message.h"
 #include "popup_msg.h"
 #include "dbgtrace.h"
@@ -17,7 +18,7 @@
 #include <map>
 #include <vector>
 #include <algorithm>
-
+#include "panel_manager.h"
 
 // Helper functions
 // 
@@ -318,6 +319,17 @@ STDMETHODIMP GdiBitmap::BoxBlur(int radius, int iteration)
     bbf.filter(*m_ptr);
 
     return S_OK;
+}
+
+STDMETHODIMP GdiBitmap::StackBlur(int radius, int core)
+{
+	TRACK_FUNCTION();
+
+	if(!m_ptr) return E_POINTER;
+
+	stack_blur_filter(*m_ptr, radius, core);
+
+	return S_OK;
 }
 
 STDMETHODIMP GdiBitmap::Resize(UINT w, UINT h, INT interpolationMode, IGdiBitmap ** pp)
@@ -1591,7 +1603,7 @@ STDMETHODIMP FbMetadbHandle::UpdateFileInfo(IFbFileInfo * fileinfo, VARIANT_BOOL
     if (!info_ptr) return E_INVALIDARG;
 
 	pfc::string8 msg, lang_msg;
-	helpers::uSPrintf(msg, load_lang(IDS_OBSOLETE_MSG, lang_msg), "UpdateFileInfo()", "UpdateFileInfoSimple()");
+	helpers::sprintf8(msg, load_lang(IDS_OBSOLETE_MSG, lang_msg), "UpdateFileInfo()", "UpdateFileInfoSimple()");
     PRINT_OBSOLETE_MESSAGE_ONCE(msg);
 
     io->update_info_async_simple(pfc::list_single_ref_t<metadb_handle_ptr>(m_handle),
@@ -3255,7 +3267,7 @@ STDMETHODIMP MenuObj::AppendMenuItem(UINT flags, UINT item_id, BSTR text)
     if (flags & MF_POPUP)
     {
 		pfc::string8 msg, lang_msg;
-		helpers::uSPrintf(msg, load_lang(IDS_OBSOLETE_MENU, lang_msg), "AppendTo()", "AppendMenuItem()");
+		helpers::sprintf8(msg, load_lang(IDS_OBSOLETE_MENU, lang_msg), "AppendTo()", "AppendMenuItem()");
         PRINT_OBSOLETE_MESSAGE_ONCE(msg);
     }
 
@@ -4104,6 +4116,16 @@ STDMETHODIMP WSHUtils::FormatFileSize(double p, BSTR * pp)
 	str = pfc::format_file_size_short((t_uint64)p);
 
 	*pp = SysAllocString(pfc::stringcvt::string_wide_from_utf8_fast(str));
+
+	return S_OK;
+}
+
+STDMETHODIMP WSHUtils::CreateHttpRequestEx(UINT window_id, IHttpRequestEx** pp)
+{
+	if(!window_id || !::IsWindow((HWND)window_id))return E_INVALIDARG;
+	if(!pp)return E_POINTER;
+
+	(*pp) = new com_object_impl_t<HttpRequestEx>(window_id);
 
 	return S_OK;
 }
@@ -5308,3 +5330,659 @@ STDMETHODIMP HttpRequest::AddPostData( BSTR name,BSTR value )
 	}
 	return E_FAIL;
 }
+
+HttpRequestExCallbackInfo::HttpRequestExCallbackInfo(HttpRequestEx* client, const wchar_t* url, const wchar_t* fn, UINT id)
+	: m_client(client)
+	, m_url(url)
+	, m_id(id)
+	, m_error(ERROR_SUCCESS)
+	, m_content_len(pfc_infinite)
+	, m_elapsed_time(0.0)
+	, m_flags(0)
+	, m_len(0)
+	, m_notified(false)
+	, m_session(NULL)
+	, m_connect(NULL)
+	, m_request(NULL)
+	, m_file(INVALID_HANDLE_VALUE)
+{
+	PFC_ASSERT(fn);
+	pfc::string8 path(client->m_save_path), fn8;
+	if (wcslen(fn))
+	{
+		fn8 = pfc::stringcvt::string_utf8_from_wide(fn);
+		pfc::string_extension ext(fn8);
+		if (ext.length() == 0)
+		{
+			pfc::string_extension ext2(pfc::stringcvt::string_utf8_from_wide(url).get_ptr());
+			if (ext2.length())
+			{
+				fn8 += ".";
+				fn8 += ext2;
+			}
+		}
+	}
+	else
+	{
+		fn8 = pfc::stringcvt::string_utf8_from_wide(url);
+		fn8 = pfc::string_filename_ext(fn8);
+	}
+	path.add_filename(fn8);
+	m_file = uCreateFile(path, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (m_file == INVALID_HANDLE_VALUE)
+		throw pfc::exception("uCreateFile Failed", GetLastError());
+	m_path = pfc::stringcvt::string_wide_from_utf8(path);
+}
+
+STDMETHODIMP HttpRequestExCallbackInfo::get_Status(UINT * p)
+{
+	if(!p)return E_POINTER;
+	(*p) = m_flags;
+	return S_OK;
+}
+
+STDMETHODIMP HttpRequestExCallbackInfo::get_Error(UINT * p)
+{
+	if(!p)return E_POINTER;
+	(*p) = m_error;
+	return S_OK;
+}
+
+STDMETHODIMP HttpRequestExCallbackInfo::get_ID(UINT * p)
+{
+	if(!p)return E_POINTER;
+	(*p) = m_id;
+	return S_OK;
+}
+
+STDMETHODIMP HttpRequestExCallbackInfo::get_URL(BSTR * pp)
+{
+	if(!pp)return E_POINTER;
+	(*pp) = SysAllocString(m_url.c_str());
+	return S_OK;
+}
+
+STDMETHODIMP HttpRequestExCallbackInfo::get_Path(BSTR* pp)
+{
+	if(!pp)return E_POINTER;
+	(*pp) = SysAllocString(m_path.c_str());
+	return S_OK;
+}
+
+STDMETHODIMP HttpRequestExCallbackInfo::get_Headers(BSTR* pp)
+{
+	if(!pp)return E_POINTER;
+	(*pp) = SysAllocString(m_headers.c_str());
+	return S_OK;
+}
+
+STDMETHODIMP HttpRequestExCallbackInfo::get_Length(UINT * p)
+{
+	if(!p)return E_POINTER;
+	(*p) = m_len;
+	return S_OK;
+}
+
+STDMETHODIMP HttpRequestExCallbackInfo::get_ContentLength(UINT * p)
+{
+	if(!p)return E_POINTER;
+	(*p) = m_content_len;
+	return S_OK;
+}
+
+STDMETHODIMP HttpRequestExCallbackInfo::get_ElapsedTime(float * p)
+{
+	if(!p)return E_POINTER;
+	(*p) = m_elapsed_time;
+	return S_OK;
+}
+
+void HttpRequestExCallbackInfo::clean_up()
+{
+	if (m_file != INVALID_HANDLE_VALUE)
+	{	
+		CloseHandle(m_file);
+		m_file = INVALID_HANDLE_VALUE;
+	}
+
+	if (m_request)
+	{
+		WinHttpCloseHandle(m_request);
+		m_request = NULL;
+	}
+
+	if (m_connect)
+	{
+		WinHttpCloseHandle(m_connect);
+		m_connect = NULL;
+	}
+
+	if (m_session)
+	{
+		WinHttpCloseHandle(m_session);
+		m_session = NULL;
+	}
+}
+
+HttpRequestEx::HttpRequestEx(UINT id)
+	: m_hwnd((HWND)id)
+{
+
+}
+
+void HttpRequestEx::FinalRelease()
+{
+
+}
+
+STDMETHODIMP HttpRequestEx::get_SavePath(BSTR* pp)
+{
+	if(!pp)return E_POINTER;
+	(*pp) = SysAllocString(pfc::stringcvt::string_wide_from_utf8(m_save_path));
+	return S_OK;
+}
+
+STDMETHODIMP HttpRequestEx::put_SavePath(BSTR path)
+{
+	if(!path)return E_INVALIDARG;
+	m_save_path = pfc::stringcvt::string_utf8_from_wide(path);
+	m_save_path.fix_dir_separator();
+	return S_OK;
+}
+
+VOID CALLBACK HttpRequestEx::AsyncStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DWORD dwInternetStatus, LPVOID lpvStatusInformation, DWORD dwStatusInformationLength)
+{
+	HttpRequestEx* _this = reinterpret_cast<HttpRequestEx*>(dwContext);
+	if(_this)_this->AsyncStatusCallback(hInternet, dwInternetStatus, lpvStatusInformation, dwStatusInformationLength);
+}
+
+BOOL HttpRequestEx::QueryHeader(HINTERNET p_request, DWORD p_level, std::wstring& p_out)
+{
+	PFC_ASSERT(p_request);
+	TRACK_FUNCTION();
+	DWORD len = 0;
+	if (!::WinHttpQueryHeaders(p_request, 
+		p_level, 
+		WINHTTP_HEADER_NAME_BY_INDEX, 
+		WINHTTP_NO_OUTPUT_BUFFER, 
+		&len, 
+		WINHTTP_NO_HEADER_INDEX) &&
+		GetLastError() == ERROR_INSUFFICIENT_BUFFER)
+	{
+		p_out.resize(len);
+	}
+
+	if(!len)return FALSE;
+
+	if (!::WinHttpQueryHeaders(p_request, 
+		p_level, 
+		WINHTTP_HEADER_NAME_BY_INDEX, 
+		const_cast<wchar_t*>(p_out.c_str()), 
+		&len, 
+		WINHTTP_NO_HEADER_INDEX))
+	{
+		p_out.clear();
+		return FALSE;
+	}
+	return TRUE;
+}
+
+HttpRequestEx::CharSet HttpRequestEx::QueryCharset(HINTERNET p_request)
+{
+	PFC_ASSERT(p_request);
+	CharSet charset = charset_ansi;
+	std::wstring raw_headers, charset_text;
+	if (!QueryHeader(p_request, WINHTTP_QUERY_RAW_HEADERS_CRLF, raw_headers))
+	{
+		return charset;
+	}
+	const wchar_t* p_headers = raw_headers.c_str();
+	const wchar_t* p_keyword = L"charset=";
+	const wchar_t* p_start = NULL;
+	const wchar_t* p_end = NULL;
+	if ((p_start = wcsstr(p_headers, p_keyword)) == NULL)return charset;
+	if((p_end = wcsstr(p_start, L"\r\n")) == NULL)return charset;
+	charset_text = raw_headers.substr(p_start - p_headers + wcslen(p_keyword), p_end - p_start - wcslen(p_keyword));
+	if (_wcsicmp(charset_text.c_str(), L"utf-8") == 0)
+	{
+		charset = charset_utf8;
+	}
+	return charset;
+}
+
+VOID HttpRequestEx::AddCallbackInfo(t_http_callback_info_ptr param)
+{
+	insync(m_request_lock);
+	m_requests.add_item(param);
+}
+
+t_http_callback_info_ptr HttpRequestEx::FindCallbackInfo(HINTERNET request)
+{
+	insync(m_request_lock);
+
+	t_http_callback_info_ptr _ptr = NULL;
+
+	auto enum_func = [&](t_http_callback_info_ptr item) -> void
+	{
+		if (item->m_request == request)
+		{
+			_ptr = item;
+			return;
+		}
+	};
+
+	m_requests.enumerate(enum_func);
+
+	return _ptr;
+}
+
+VOID HttpRequestEx::RemoveAndReleaseCallbackInfo(t_http_callback_info_ptr param)
+{
+	PFC_ASSERT(param);
+	insync(m_request_lock);
+	t_size index = m_requests.find_item(param);
+	if (index != pfc_infinite)
+	{
+		m_requests.remove_by_idx(index);
+		param->clean_up();
+		param->Release();
+	}
+}
+
+VOID HttpRequestEx::OnRequestStatus(t_http_callback_info_ptr param)
+{
+	TRACK_FUNCTION();
+	PFC_ASSERT(param);
+
+	insync(m_request_lock);
+
+	if(param->m_notified)return;
+	param->AddRef();
+
+	if ((param->m_error != 0) || (param->m_flags & StatusDataReadComplete))
+	{
+		param->m_notified = true;
+		RemoveAndReleaseCallbackInfo(param);
+	}
+
+	param->m_elapsed_time = (float)param->m_timer.query();
+
+	::PostMessage(m_hwnd, CALLBACK_UWM_HTTPEX_RUNASYNC_STATUS, (WPARAM)param, 0);
+
+}
+
+VOID HttpRequestEx::AsyncStatusCallback(HINTERNET hInternet, DWORD dwInternetStatus, LPVOID lpvStatusInformation, DWORD dwStatusInformationLength)
+{
+	TRACK_FUNCTION();
+
+	t_http_callback_info_ptr param = FindCallbackInfo(hInternet);
+	if (!param)return;
+
+	switch(dwInternetStatus)
+	{
+	case WINHTTP_CALLBACK_STATUS_SENDREQUEST_COMPLETE:
+		{
+			::WinHttpReceiveResponse(hInternet, NULL);
+		}
+		break;
+
+	case WINHTTP_CALLBACK_STATUS_HEADERS_AVAILABLE:
+		{
+			if (QueryHeader(hInternet, WINHTTP_QUERY_RAW_HEADERS_CRLF, param->m_headers))
+			{
+				param->m_flags |= StatusHeadersAvailable;
+			}
+
+			std::wstring len;
+			if (QueryHeader(hInternet, WINHTTP_QUERY_CONTENT_LENGTH, len))
+			{
+				param->m_content_len = (UINT)_wtoi(len.c_str());
+			}
+
+			::WinHttpQueryDataAvailable(hInternet, NULL);
+		}
+		break;
+
+	case WINHTTP_CALLBACK_STATUS_DATA_AVAILABLE:
+		{
+			if(!lpvStatusInformation)break;
+			DWORD dwLen = *(LPDWORD)lpvStatusInformation;
+			if(dwLen == 0)
+			{
+				param->m_flags |= StatusDataReadComplete;
+				break;
+			}
+			BYTE * pBuf = new BYTE[dwLen];
+			if(NULL == pBuf)
+			{
+				param->m_error = ERROR_NOT_ENOUGH_MEMORY;
+				break;
+			}
+			DWORD dwExpectedLen = 0;
+			::WinHttpReadData(hInternet, pBuf, dwLen, &dwExpectedLen);
+		}
+		break;
+
+	case WINHTTP_CALLBACK_STATUS_READ_COMPLETE:
+		{
+			if ((dwStatusInformationLength != 0))
+			{
+				DWORD dwExpectedLen = 0;
+				pfc::ptrholder_t<BYTE, pfc::releaser_delete_array> buf((LPBYTE)lpvStatusInformation);
+				if(!::WriteFile(param->m_file, buf.get_ptr(), dwStatusInformationLength, &dwExpectedLen, NULL) || (dwExpectedLen != dwStatusInformationLength))
+				{
+					param->m_error = GetLastError();
+					break;
+				}
+				param->m_len += dwStatusInformationLength;
+
+				::WinHttpQueryDataAvailable(hInternet, NULL);
+			}
+		}
+		break;
+
+	case WINHTTP_CALLBACK_STATUS_REQUEST_ERROR:
+		{
+			WINHTTP_ASYNC_RESULT* result = (WINHTTP_ASYNC_RESULT*)lpvStatusInformation;
+			param->m_error = result->dwError;
+		}
+		break;
+
+	default:
+		break;
+	}
+
+	OnRequestStatus(param);
+}
+
+STDMETHODIMP HttpRequestEx::Run(BSTR url, BSTR verb, BSTR* pp)
+{
+	TRACK_FUNCTION();
+	if(!url || !verb)return E_INVALIDARG;
+	if(!pp)return E_POINTER;
+
+	HRESULT hr = E_FAIL;
+	HINTERNET session_handle = NULL, connect_handle = NULL, request_handle = NULL;
+
+	do 
+	{
+		wchar_t host[MAX_PATH] = { 0 }, url_path[MAX_PATH] = { 0 };
+		URL_COMPONENTS url_comp = { 0 };
+		url_comp.dwStructSize = sizeof(url_comp);
+		url_comp.lpszHostName = host;
+		url_comp.dwHostNameLength = pfc::array_size_t(host);
+		url_comp.lpszUrlPath = url_path;
+		url_comp.dwUrlPathLength = pfc::array_size_t(url_path);
+
+		if (!::WinHttpCrackUrl(url, 0, 0, &url_comp))
+		{
+			DWORD err = GetLastError();
+			if (err == ERROR_WINHTTP_INVALID_URL || err == ERROR_WINHTTP_UNRECOGNIZED_SCHEME)
+			{
+				hr = E_INVALIDARG;
+			}
+			break;
+		}
+
+		session_handle = ::WinHttpOpen(L"Fb2kWshmp WinHttp/1.0", 
+			WINHTTP_ACCESS_TYPE_DEFAULT_PROXY, 
+			WINHTTP_NO_PROXY_NAME, 
+			WINHTTP_NO_PROXY_BYPASS, 
+			0);
+
+		if (!session_handle)
+		{
+			break;
+		}
+
+		connect_handle = ::WinHttpConnect(session_handle, host, url_comp.nPort, 0);
+		if (!connect_handle)
+		{
+			break;
+		}
+
+		request_handle = ::WinHttpOpenRequest(connect_handle,
+			(_wcsicmp(verb, L"POST") == 0) ? L"POST" : L"GET",
+			url_path, NULL,
+			WINHTTP_NO_REFERER,
+			WINHTTP_DEFAULT_ACCEPT_TYPES,
+			(url_comp.nScheme == INTERNET_SCHEME_HTTPS) ? WINHTTP_FLAG_SECURE : 0);
+		if (!request_handle)
+		{
+			break;
+		}
+
+		if (!::WinHttpSendRequest(request_handle, 
+			WINHTTP_NO_ADDITIONAL_HEADERS, 0,
+			WINHTTP_NO_REQUEST_DATA, 0,
+			0, 0))
+		{
+			break;
+		}
+
+		if (!::WinHttpReceiveResponse(request_handle, NULL))
+		{
+			break;
+		}
+
+		enum { BUF_BLOCK_DELTA = 128 * 1024, };
+		pfc::array_t<t_uint8> data;
+		data.set_size(BUF_BLOCK_DELTA);
+		DWORD len = 0, total_len = 0;
+		do 
+		{
+			len = 0;
+			if (!::WinHttpQueryDataAvailable(request_handle, &len))
+			{
+				continue;
+			}
+
+			if (total_len + len > data.get_size())
+			{
+				try
+				{
+					data.increase_size(pfc::max_t<DWORD>(len, BUF_BLOCK_DELTA));
+				}
+				catch (std::bad_alloc &)
+				{
+					break;
+				}
+
+			}
+
+			DWORD read_len = 0;
+			if(!::WinHttpReadData(request_handle, data.get_ptr() + total_len, len, &read_len)
+				&& read_len != len)
+			{
+				break;
+			}
+			total_len += read_len;
+
+		} while (len > 0);
+
+		data.append_single_val(0);
+
+		CharSet charset = QueryCharset(request_handle);
+		switch(charset)
+		{
+		case charset_utf8:
+			(*pp) = SysAllocString(pfc::stringcvt::string_wide_from_utf8(reinterpret_cast<const char*>(data.get_ptr())));
+			break;
+		case charset_ansi:
+		default:
+			(*pp) = SysAllocString(pfc::stringcvt::string_wide_from_ansi(reinterpret_cast<const char*>(data.get_ptr())));
+			break;
+		}
+
+		hr = S_OK;
+
+	} while (FALSE);
+
+
+	if (request_handle)
+	{
+		WinHttpCloseHandle(request_handle);
+	}
+
+	if (connect_handle)
+	{
+		WinHttpCloseHandle(connect_handle);
+	}
+
+	if (session_handle)
+	{
+		WinHttpCloseHandle(session_handle);
+	}
+
+	return hr;
+}
+
+STDMETHODIMP HttpRequestEx::RunAsync(UINT id, BSTR url,BSTR fn, BSTR verb, UINT* p)
+{
+	TRACK_FUNCTION();
+	if(!url || !verb || !fn)return E_INVALIDARG;
+	if(!p)return E_POINTER;
+	HRESULT hr = E_FAIL;
+	t_http_callback_info_ptr param = NULL;
+
+	if (m_save_path.length() == 0)
+	{
+		m_save_path = helpers::get_profile_path();
+		m_save_path.add_string("cache");
+	}
+
+	if (!helpers::create_directory_recur(m_save_path))
+	{
+		return hr;
+	}
+
+	do 
+	{
+		wchar_t host[MAX_PATH] = { 0 }, url_path[MAX_PATH] = { 0 };
+		URL_COMPONENTS url_comp = { 0 };
+		url_comp.dwStructSize = sizeof(url_comp);
+		url_comp.lpszHostName = host;
+		url_comp.dwHostNameLength = pfc::array_size_t(host);
+		url_comp.lpszUrlPath = url_path;
+		url_comp.dwUrlPathLength = pfc::array_size_t(url_path);
+
+		if (!::WinHttpCrackUrl(url, 0, 0, &url_comp))
+		{
+			DWORD err = GetLastError();
+			if (err == ERROR_WINHTTP_INVALID_URL || err == ERROR_WINHTTP_UNRECOGNIZED_SCHEME)
+			{
+				hr = E_INVALIDARG;
+			}
+			break;
+		}
+
+		try
+		{
+			param = new com_object_impl_t<HttpRequestExCallbackInfo>(this, url, fn, id);
+		}
+		catch (pfc::exception&)
+		{
+			break;
+		}
+
+		param->m_session = ::WinHttpOpen(L"Fb2kWshmp WinHttp/1.0", 
+			WINHTTP_ACCESS_TYPE_DEFAULT_PROXY, 
+			WINHTTP_NO_PROXY_NAME, 
+			WINHTTP_NO_PROXY_BYPASS, 
+			WINHTTP_FLAG_ASYNC);
+		if (!param->m_session)
+		{
+			break;
+		}
+
+		param->m_connect = ::WinHttpConnect(param->m_session, host, url_comp.nPort, 0);
+		if (!param->m_session)
+		{
+			break;
+		}
+
+		param->m_request = ::WinHttpOpenRequest(param->m_connect,
+			(_wcsicmp(verb, L"POST") == 0) ? L"POST" : L"GET",
+			url_path, NULL,
+			WINHTTP_NO_REFERER,
+			WINHTTP_DEFAULT_ACCEPT_TYPES,
+			(url_comp.nScheme == INTERNET_SCHEME_HTTPS) ? WINHTTP_FLAG_SECURE : 0);
+		if (!param->m_request)
+		{
+			break;
+		}
+
+		if (::WinHttpSetStatusCallback(param->m_request, 
+			AsyncStatusCallback, 
+			WINHTTP_CALLBACK_FLAG_ALL_COMPLETIONS,
+			0) != NULL)
+		{
+			break;//the previously defined status callback function not null
+		}
+
+		if (!::WinHttpSendRequest(param->m_request, 
+			WINHTTP_NO_ADDITIONAL_HEADERS, 0,
+			WINHTTP_NO_REQUEST_DATA, 0,
+			0, (DWORD_PTR)this))
+		{
+			break;
+		}
+
+		param->start_timer();
+
+		hr = S_OK;
+
+	} while (FALSE);
+
+	if (SUCCEEDED(hr))
+	{
+		AddCallbackInfo(param);
+	}
+	else if(param)
+	{
+		param->Release();
+	}
+	return hr;
+}
+
+STDMETHODIMP HttpRequestEx::AbortAsync(UINT id, BSTR url, VARIANT_BOOL* p)
+{
+	TRACK_FUNCTION();
+
+	if (!url)return E_INVALIDARG;
+	if(!p)return E_POINTER;
+
+	insync(m_request_lock);
+
+	(*p) = TO_VARIANT_BOOL(FALSE);
+
+	t_size n, m = m_requests.get_count();
+
+	for (n = 0; n < m; ++n)
+	{
+		if ((StrCmpW(m_requests[n]->m_url.c_str(), url) == 0) && (m_requests[n]->m_request != NULL))
+			break;
+	}
+
+	if (n == m)
+	{
+		for (n = 0; n < m; ++n)
+		{
+			if ((m_requests[n]->m_id == id) && (m_requests[n]->m_request != NULL))
+				break;
+		}
+	}
+
+	if (n < m)
+	{
+		(VOID)WinHttpSetStatusCallback(m_requests[n]->m_request, NULL, 0, 0);
+		BOOL ret = WinHttpCloseHandle(m_requests[n]->m_request);
+		m_requests[n]->m_request = NULL;
+		m_requests[n]->m_error = ERROR_CANCELLED;
+		RemoveAndReleaseCallbackInfo(m_requests[n]);
+		(*p) = TO_VARIANT_BOOL(ret);
+	}
+
+	return S_OK;
+}
+

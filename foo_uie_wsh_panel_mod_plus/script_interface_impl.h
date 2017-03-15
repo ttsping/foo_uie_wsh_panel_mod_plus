@@ -1,5 +1,5 @@
 #pragma once
-
+#include <winhttp.h>
 #include "script_interface.h"
 #include "com_tools.h"
 #include "helpers.h"
@@ -84,6 +84,7 @@ public:
 	STDMETHODIMP GetGraphics(IGdiGraphics ** pp);
 	STDMETHODIMP ReleaseGraphics(IGdiGraphics * p);
 	STDMETHODIMP BoxBlur(int radius, int iteration);
+	STDMETHODIMP StackBlur(int radius, int core);
     STDMETHODIMP Resize(UINT w, UINT h, INT interpolationMode, IGdiBitmap ** pp);
     STDMETHODIMP GetColorScheme(UINT count, VARIANT * outArray);
 	STDMETHODIMP GetPixel(INT x , INT y , INT * p);
@@ -610,6 +611,7 @@ public:
 	STDMETHODIMP PrintPreferencePageGUID();
 	STDMETHODIMP FormatDuration(double p, BSTR * pp);
 	STDMETHODIMP FormatFileSize(double p, BSTR * pp);
+	STDMETHODIMP CreateHttpRequestEx(UINT window_id, IHttpRequestEx** pp);
 };
 
 // forward declaration
@@ -839,3 +841,120 @@ public:
 	STDMETHODIMP RunAsync(UINT window_id, BSTR url, UINT* p);
 };
 
+typedef struct tagRequestInfo
+{
+	HINTERNET hSession;
+	HINTERNET hConnect;
+	HINTERNET hRequest;
+	HANDLE hFile;
+	UINT uLen;
+	UINT uContentLen;
+	UINT ID;
+	UINT uFlags;
+	DWORD dwError;
+	std::wstring FilePath;
+	std::wstring Url;
+	std::wstring Headers;
+	pfc::hires_timer Timer;
+}RequestInfo, *PRequestInfo;
+typedef pfc::list_t<PRequestInfo> RequestInfoPtrList;
+
+class HttpRequestEx;
+class HttpRequestExCallbackInfo : public IDispatchImpl3<IHttpRequestExCallbackInfo>
+{
+private:
+	friend class HttpRequestEx;
+public:
+	HttpRequestExCallbackInfo(HttpRequestEx* client, const wchar_t* url, const wchar_t* fn, UINT id);
+
+public:
+	STDMETHODIMP get_Status(UINT * p);
+	STDMETHODIMP get_Error(UINT * p);
+	STDMETHODIMP get_ID(UINT * p);
+	STDMETHODIMP get_URL(BSTR * pp);
+	STDMETHODIMP get_Path(BSTR* pp);
+	STDMETHODIMP get_Headers(BSTR* pp);
+	STDMETHODIMP get_Length(UINT * p);
+	STDMETHODIMP get_ContentLength(UINT * p);
+	STDMETHODIMP get_ElapsedTime(float * p);
+
+public:
+	VOID start_timer() { try { m_timer.start(); } catch(pfc::exception&){}; }
+	void clean_up();
+
+private:
+	std::wstring                m_path;
+	std::wstring                m_url;
+	std::wstring                m_headers;
+	UINT                        m_flags;
+	UINT                        m_error;
+	UINT                        m_id;
+	UINT                        m_len;
+	UINT                        m_content_len;
+	float                       m_elapsed_time;
+	
+	//internal use
+	HttpRequestEx*				m_client;
+	HINTERNET                   m_session;
+	HINTERNET                   m_connect;
+	HINTERNET                   m_request;
+	HANDLE                      m_file;
+	pfc::hires_timer			m_timer;
+	bool						m_notified;
+};
+
+typedef HttpRequestExCallbackInfo t_http_callback_info;
+typedef HttpRequestExCallbackInfo* t_http_callback_info_ptr;
+
+typedef pfc::list_t<t_http_callback_info_ptr> t_http_callback_info_ptr_list;
+
+class HttpRequestEx : public IDisposableImpl4<IHttpRequestEx>
+{
+private:
+	friend class HttpRequestExCallbackInfo;
+	enum CharSet
+	{
+		charset_ansi = 0,
+		charset_utf8,
+	};
+
+	enum StatusFlag
+	{
+		StatusHeadersAvailable = 1 << 0,
+		StatusDataReadComplete = 1 << 1,
+	};
+
+public:
+	HttpRequestEx(UINT id);
+	virtual ~HttpRequestEx() { };
+
+	virtual void FinalRelease();
+
+public:
+	STDMETHODIMP get_SavePath(BSTR* pp);
+	STDMETHODIMP put_SavePath(BSTR path);
+
+	STDMETHODIMP Run(BSTR url, BSTR verb, BSTR* pp);
+	STDMETHODIMP RunAsync(UINT id, BSTR url,BSTR fn, BSTR verb, UINT* p);
+	STDMETHODIMP AbortAsync(UINT id, BSTR url, VARIANT_BOOL* p);
+
+public:
+	static VOID CALLBACK AsyncStatusCallback(HINTERNET hInternet, DWORD_PTR dwContext, DWORD dwInternetStatus, LPVOID lpvStatusInformation, DWORD dwStatusInformationLength);
+
+private:
+	VOID AsyncStatusCallback(HINTERNET hInternet, DWORD dwInternetStatus, LPVOID lpvStatusInformation, DWORD dwStatusInformationLength);
+	BOOL QueryHeader(HINTERNET p_request, DWORD p_level, std::wstring& p_out);
+	CharSet QueryCharset(HINTERNET p_request);
+
+	VOID AddCallbackInfo(t_http_callback_info_ptr param);
+	t_http_callback_info_ptr FindCallbackInfo(HINTERNET request);
+	VOID RemoveAndReleaseCallbackInfo(t_http_callback_info_ptr param);
+
+	VOID OnRequestStatus(t_http_callback_info_ptr param);
+
+private:
+	t_http_callback_info_ptr_list	m_requests;
+	critical_section                m_request_lock;
+	pfc::string8                    m_save_path;
+	HWND                            m_hwnd;
+};

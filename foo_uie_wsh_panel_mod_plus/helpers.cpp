@@ -1141,7 +1141,7 @@ namespace helpers
 		SendMessage(m_notify_hwnd, CALLBACK_UWM_HTTPRUNASYNCDONE, 0, (LPARAM)&param);
 	}
 
-	void uSPrintf( pfc::string_base& p_out, const char* p_fmt, ... )
+	void sprintf8( pfc::string_base& p_out, const char* p_fmt, ... )
 	{
 		PFC_ASSERT(p_fmt);
 		enum { MAX_BUF = 2048, };
@@ -1151,6 +1151,33 @@ namespace helpers
 		vsprintf_s(buf, p_fmt, ap);
 		va_end(ap);
 		p_out.set_string(buf);
+	}
+
+	bool create_directory_recur(const char* path)
+	{
+		if(!path)return false;
+		const char* p_backslash = strchr(path, '\\');
+		if(!p_backslash)return false;
+		abort_callback_dummy abort;
+		while (p_backslash)
+		{
+			pfc::string8_fast dir(path, p_backslash - path + 1), dir_canon;
+			
+			try
+			{
+				filesystem::g_get_canonical_path(dir, dir_canon);
+				if (!filesystem::g_is_valid_directory(dir_canon, abort))
+				{
+					filesystem::g_create_directory(dir_canon, abort);
+				}
+			}
+			catch (...)
+			{
+				return false;
+			}
+			p_backslash = strchr(p_backslash + 1, '\\');
+		}
+		return true;
 	}
 
 }
