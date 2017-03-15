@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
 // Microsoft Visual C++ generated include file.
-// Used by J:\Source\foo_uie_wsh_panel_mod_plus_v13\foo_uie_wsh_panel_mod_plus\foo_uie_wsh_panel_mod\foo_uie_wsh_panel_mod_plus\res\resource.rc
+// Used by E:\Source\foo_uie_wsh_panel_mod_plus_v13\foo_uie_wsh_panel_mod_plus\foo_uie_wsh_panel_mod\foo_uie_wsh_panel_mod_plus\res\resource.rc
 //
 #define IDD_DIALOG_CONFIG               101
 #define IDR_SCRIPT                      102

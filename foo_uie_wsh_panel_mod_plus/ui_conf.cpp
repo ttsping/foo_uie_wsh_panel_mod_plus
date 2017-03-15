@@ -14,14 +14,23 @@ namespace{
 	static service_factory_single_t<CDialogConf::wsh_console_receiver_impl> wsh_console_receiver;
 }
 
+HWND CDialogConf::g_cfgdlg = NULL;
+
 LRESULT CDialogConf::OnInitDialog(HWND hwndFocus, LPARAM lParam)
 {
 	
 	modeless_dialog_manager::g_add(m_hWnd);
-	panel_manager::instance().add_window(m_hWnd);
+
+	g_cfgdlg = m_hWnd;
+
 	// Set Icon
 	HICON icon = static_api_ptr_t<ui_control>()->get_main_icon();
 	SetIcon(icon, FALSE);
+	// Set topmost if needed
+	if (::GetWindowLongPtr(core_api::get_main_window(), GWL_EXSTYLE) & WS_EX_TOPMOST)
+	{
+		SetWindowPos(HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE| SWP_NOMOVE);
+	}
 
 	// Save caption text
 	pfc::string8 lang_text;
@@ -338,6 +347,50 @@ LRESULT CDialogConf::OnNotify(int idCtrl, LPNMHDR pnmh)
 	return 0; 
 }
 
+void CDialogConf::OnInitMenuPopup(CMenuHandle menuPopup, UINT nIndex, BOOL bSysMenu)
+{
+	if (bSysMenu)
+	{
+		if (!IsMenuItemExist(menuPopup, IDM_ALWAYS_ON_TOP))
+		{
+			//menuPopup.InsertMenu(SC_MINIMIZE, MF_BYCOMMAND);
+			menuPopup.InsertMenu(SC_MINIMIZE, MF_BYCOMMAND, IDM_ALWAYS_ON_TOP, L"Always on top");
+			//menuPopup.InsertMenu(SC_MINIMIZE, MF_BYCOMMAND);
+		}
+		
+		if (GetWindowLongPtr(GWL_EXSTYLE) & WS_EX_TOPMOST)
+		{
+			menuPopup.CheckMenuItem(IDM_ALWAYS_ON_TOP, MF_BYCOMMAND | MF_CHECKED);
+		}
+		else
+		{
+			menuPopup.CheckMenuItem(IDM_ALWAYS_ON_TOP, MF_BYCOMMAND | MF_UNCHECKED);
+		}
+	}
+}
+
+void CDialogConf::OnSysCommand(UINT nID, CPoint point)
+{
+	switch(nID)
+	{
+	case IDM_ALWAYS_ON_TOP:
+		{
+			if (GetWindowLongPtr(GWL_EXSTYLE) & WS_EX_TOPMOST)
+			{
+				SetWindowPos(HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+			}
+			else
+			{
+				SetWindowPos(HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+			}
+		}
+		break;
+	default:
+		SetMsgHandled(FALSE);
+		break;
+	}
+}
+
 bool CDialogConf::MatchShortcuts(unsigned vk)
 {
 	int modifiers = 
@@ -485,6 +538,14 @@ bool CDialogConf::FindResult(HWND hWnd, HWND hWndEdit, int pos, const char *whic
     return false;
 }
 
+BOOL CDialogConf::IsMenuItemExist(HMENU hMenu, UINT_PTR uItem)
+{
+	MENUITEMINFO mii = { 0 };
+	mii.cbSize = sizeof(mii);
+	::GetMenuItemInfo(hMenu, (UINT)uItem, FALSE, &mii);
+	return (::GetLastError() == ERROR_SUCCESS);
+}
+
 void CDialogConf::OpenFindDialog()
 {
     if (!m_dlgfind)
@@ -501,7 +562,7 @@ void CDialogConf::OpenFindDialog()
 void CDialogConf::OnFinalMessage( HWND hWnd )
 {
 	modeless_dialog_manager::g_remove(m_hWnd);
-	panel_manager::instance().remove_window(m_hWnd);
+	g_cfgdlg = NULL;
 	(*m_self) = NULL;
 	delete this;
 }
@@ -522,5 +583,8 @@ void CDialogConf::OnShowConsolePane( UINT uNotifyCode, int nID, CWindow wndCtl )
 
 void CDialogConf::wsh_console_receiver_impl::print( const char * p_message, unsigned p_message_length )
 {
-	panel_manager::instance().send_msg_to_all(UWM_CONSOLE_PRINT,(WPARAM)p_message,(LPARAM)p_message_length);
+	if (g_cfgdlg)
+	{
+		::SendMessage(g_cfgdlg, UWM_CONSOLE_PRINT, (WPARAM)p_message, (LPARAM)p_message_length);
+	}
 }
